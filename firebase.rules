@@ -1,0 +1,58 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users collection:
+    // - Anyone can read user profiles (for leaderboards, viewing profiles).
+    // - Authenticated users can create their own user document upon signup.
+    // - Authenticated users can only update their own user document.
+    // - Deletion is generally disallowed from client-side for user documents.
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.auth.uid == userId 
+                      && request.resource.data.username != null // Ensure username is provided
+                      && request.resource.data.email != null;  // Ensure internal email is provided
+      allow update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+    // Baths collection (for logged baths and planned baths):
+    // - Anyone can read bath entries (for the feed, profile logs).
+    // - Authenticated users can create bath entries for themselves.
+    // - Only the user who created a bath entry can update most of its fields or delete it.
+    // - For 'planned' baths, any authenticated user can add/remove themselves from 'attendees'.
+    match /baths/{bathId} {
+      allow read: if true;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null && (
+                    // Owner can update all fields they are allowed to change (e.g. comments, image for logged, description for planned)
+                    (resource.data.userId == request.auth.uid) || 
+                    // Any authenticated user can update the 'attendees' list for a 'planned' bath
+                    (request.resource.data.type == 'planned' && 
+                      (
+                        (request.resource.data.attendeesdiff(resource.data.attendees).added().hasOnly([request.auth.uid])) || // User is adding themselves
+                        (request.resource.data.attendeesdiff(resource.data.attendees).removed().hasOnly([request.auth.uid]))  // User is removing themselves
+                      ) &&
+                      // Ensure no other fields are being changed when modifying attendees, unless by owner
+                      (request.resource.data.keys().hasOnly(['attendees']) || resource.data.userId == request.auth.uid)
+                    )
+                  );
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+  }
+}
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Avatars: Users can only write to their own avatar path. Anyone can read.
+    match /avatars/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    // Bath images: Users can only write to their own bath image path. Anyone can read.
+    match /baths/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

@@ -1,0 +1,69 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users collection:
+    // - Anyone can read user profiles (for username checks, profile viewing).
+    // - Authenticated users can create their own profile.
+    // - Authenticated users can update their own profile (username is immutable).
+    // - Deletion is disallowed from client.
+    match /users/{userId} {
+      allow read: if true;
+
+      allow create: if request.auth != null && request.auth.uid == userId
+                      && request.resource.data.uid == request.auth.uid
+                      && request.resource.data.username is string && request.resource.data.username.size() > 0
+                      && request.resource.data.email is string && request.resource.data.email.size() > 0 // Internal auth email
+                      && request.resource.data.name is string && request.resource.data.name.size() > 0
+                      && request.resource.data.targetBaths is number
+                      && request.resource.data.currentBaths == 0
+                      && (request.resource.data.bio == "" || request.resource.data.bio == null)
+                      && (request.resource.data.avatarUrl == "" || request.resource.data.avatarUrl == null);
+
+      allow update: if request.auth != null && request.auth.uid == userId
+                      // Ensure critical fields like username and internal email are not changed via client update
+                      && request.resource.data.username == resource.data.username
+                      && request.resource.data.email == resource.data.email;
+
+      allow delete: if false;
+    }
+
+    // Baths collection (for logged and planned baths):
+    // - Temporarily allow anyone to read baths for debugging Listen stream errors.
+    // - Authenticated users can create new baths for themselves.
+    // - Only the owner of a bath can update or delete it.
+    match /baths/{bathId} {
+      allow read: if true; // Made public for debugging Listen errors
+
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid
+                      // Basic common fields
+                      && request.resource.data.type is string && (request.resource.data.type == 'logged' || request.resource.data.type == 'planned')
+                      && request.resource.data.date is string // Consider adding YYYY-MM-DD regex validation
+                      && request.resource.data.time is string // Consider adding HH:MM regex validation
+                      && request.resource.data.userName is string && request.resource.data.userName.size() > 0
+                      && request.resource.data.createdAt is number // Should be a serverTimestamp on client or number
+                      // Logged bath specific optional fields (presence check or type check if present)
+                      && (request.resource.data.type == 'planned' || (request.resource.data.type == 'logged' && (request.resource.data.waterTemperature is string || request.resource.data.waterTemperature == null || request.resource.data.waterTemperature == "")))
+                      && (request.resource.data.type == 'planned' || (request.resource.data.type == 'logged' && (request.resource.data.comments is string || request.resource.data.comments == "" || request.resource.data.comments == null)))
+                      && (request.resource.data.type == 'planned' || (request.resource.data.type == 'logged' && (request.resource.data.imageUrl is string || request.resource.data.imageUrl == null || request.resource.data.imageUrl == "")))
+                      && (request.resource.data.type == 'planned' || (request.resource.data.type == 'logged' && request.resource.data.reactions is map && request.resource.data.reactions.size() == 3 &&
+                           request.resource.data.reactions.thumbsUp is number && request.resource.data.reactions.heart is number && request.resource.data.reactions.party is number
+                         ))
+                      && (request.resource.data.type == 'planned' || (request.resource.data.type == 'logged' && request.resource.data.commentCount is number))
+                      // Planned bath specific required fields
+                      && (request.resource.data.type == 'logged' || (request.resource.data.type == 'planned' && request.resource.data.description is string && request.resource.data.description.size() > 0))
+                      && (request.resource.data.type == 'logged' || (request.resource.data.type == 'planned' && request.resource.data.attendees is list));
+
+
+      allow update: if request.auth != null && resource.data.userId == request.auth.uid
+                      // Ensure userId cannot be changed
+                      && request.resource.data.userId == resource.data.userId
+                      // Add other immutable field checks if necessary (e.g., type)
+                      && request.resource.data.type == resource.data.type;
+
+
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+  }
+}

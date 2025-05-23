@@ -1,0 +1,20 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /avatars/{userId}/{filename} {
+      allow read: if true; // Allow public read for avatars
+      allow create, update: if request.auth.uid == userId;
+      // allow delete: if request.auth.uid == userId; // Optional: enable if users should delete their own avatars
+    }
+    match /baths/{userId}/{filename} {
+      allow read: if true; // Allow public read for bath images (e.g., for feeds)
+      allow create, update: if request.auth.uid == userId;
+      // allow delete: if request.auth.uid == userId; // Optional: enable if users should delete their own bath images
+    }
+     // Fallback for any other paths - generally, keep this restrictive or remove if not needed.
+    match /{allPaths=**} {
+      allow read: if request.auth != null; // Or 'if false;' if no other paths should be readable
+      allow write: if false; // Disallow any other writes by default
+    }
+  }
+}
