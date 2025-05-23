@@ -175,7 +175,7 @@ export default function UserProfilePage() {
           <div className="flex flex-col items-center">
             <Avatar className="h-24 w-24 mb-4 border-4 border-primary shadow-md">
               <AvatarImage src={user.avatarUrl || `https://picsum.photos/seed/${user.uid}/100/100`} alt={user.name} data-ai-hint="brukerprofil avatar" />
-              <AvatarFallback>{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+              <AvatarFallback>{typeof user.name === 'string' ? user.name.substring(0, 2).toUpperCase() : '??'}</AvatarFallback>
             </Avatar>
             <CardTitle className="text-3xl font-bold">{user.name}</CardTitle>
             {user.bio && <CardDescription className="mt-1 text-md">{user.bio}</CardDescription>}
