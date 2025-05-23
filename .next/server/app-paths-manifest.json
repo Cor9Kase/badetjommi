@@ -1,7 +1,13 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/logg-bad/page": "app/logg-bad/page.js",
   "/leaderboard/page": "app/leaderboard/page.js",
+  "/page": "app/page.js",
+  "/page/page": "app/page/page.js",
   "/login/page": "app/login/page.js",
-  "/page": "app/page.js"
+  "/planlegg-bad/page": "app/planlegg-bad/page.js",
+  "/signup/page": "app/signup/page.js",
+  "/profil/[userId]/page": "app/profil/[userId]/page.js",
+  "/profil/page": "app/profil/page.js"
 }

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -78,20 +77,10 @@ export default function ProfilPage() {
     );
   }
   
-  // If we reach here, currentUser and userProfile should be available, and not loading.
-  // However, add a final check for userProfile just in case, though the above block should catch it.
-  if (!userProfile) {
-     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
-        <Waves className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-muted-foreground">Laster profildata...</p>
-      </div>
-    );
-  }
   
   return (
     <div className="space-y-8">
-      <OnboardingModal isOpen={showOnboardingModal} onOpenChange={setShowOnboardingModal} />
+      <OnboardingModal isOpen={showOnboardingModal} onOpenChange={setShowOnboardingModal}/>
       <Card className="shadow-xl">
         <CardHeader>
           <CardTitle className="text-3xl font-bold flex items-center">
@@ -109,14 +98,9 @@ export default function ProfilPage() {
           <CardTitle className="text-2xl font-semibold">Min Progresjon</CardTitle>
         </CardHeader>
         <CardContent>
-          <UserProgress 
-            userName={userProfile.name} 
-            currentBaths={userProfile.currentBaths} 
-            targetBaths={userProfile.targetBaths}
-            userAvatar={userProfile.avatarUrl} 
-          />
+          <UserProgress userName={userProfile.name} currentBaths={userProfile.currentBaths} targetBaths={userProfile.targetBaths} userAvatar={userProfile.avatarUrl} />
         </CardContent>
-      </</Card>
+      </Card>
       
       {currentUser && (
          <div className="text-center">

@@ -1,6 +1,6 @@
-
 {
   "firestore": {
+    "database": "(default)",
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
@@ -8,17 +8,17 @@
     "rules": "storage.rules"
   },
   "hosting": {
-    "site": "arctic-splash-challenge",
+    "public": "out",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
     ]
-    // By omitting "public" and explicit "rewrites" here,
-    // we allow Firebase's framework-aware hosting (using buildpacks)
-    // to automatically detect and configure serving for your Next.js application.
-    // This is generally preferred for full-stack Next.js apps using App Router.
-    // The build system should detect Next.js and configure serving appropriately
-    // IF it can find your project files (package.json, next.config.ts, etc.) correctly.
   }
 }

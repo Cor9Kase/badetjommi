@@ -1,0 +1,13 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/favicon.ico/route": "/favicon.ico",
+  "/logg-bad/page": "/logg-bad",
+  "/leaderboard/page": "/leaderboard",
+  "/page": "/",
+  "/page/page": "/page",
+  "/login/page": "/login",
+  "/planlegg-bad/page": "/planlegg-bad",
+  "/signup/page": "/signup",
+  "/profil/[userId]/page": "/profil/[userId]",
+  "/profil/page": "/profil"
+}
