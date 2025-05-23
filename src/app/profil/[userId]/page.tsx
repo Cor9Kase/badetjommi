@@ -64,7 +64,7 @@ export default function UserProfilePage() {
           const data = doc.data() as BathEntry;
           logEntries.push({ ...data, id: doc.id });
            if (data.type === 'planned') {
-            data.attendees.forEach(uid => attendeeIdsToFetch.add(uid));
+            data.attendees?.forEach(uid => attendeeIdsToFetch.add(uid));
           }
         });
         setBathLog(logEntries);
@@ -253,15 +253,15 @@ export default function UserProfilePage() {
                       <div className="space-y-2 text-sm">
                         <div className="flex items-center">
                           <Users className="h-4 w-4 mr-2 text-muted-foreground" />
-                          <span>{bath.attendees.length} påmeldt.</span>
+                          <span>{bath.attendees ? bath.attendees.length : 0} påmeldt.</span>
                         </div>
-                        {bath.attendees.length > 0 && <p className="text-muted-foreground">Deltakere: {bath.attendees.map(uid => attendeesDetails[uid]?.name || '...').join(', ')}</p>}
+                        {bath.attendees && bath.attendees.length > 0 && <p className="text-muted-foreground">Deltakere: {bath.attendees.map(uid => attendeesDetails[uid]?.name || '...').join(', ')}</p>}
 
                         {loggedInUser && loggedInUser.uid === bath.userId ? (
                            <Button size="sm" variant="outline" className="mt-2 w-full sm:w-auto" disabled>
                              <Info className="mr-2 h-4 w-4" /> Du arrangerer
                            </Button>
-                        ) : loggedInUser && bath.attendees.includes(loggedInUser.uid) ? (
+                        ) : loggedInUser && bath.attendees && bath.attendees.includes(loggedInUser.uid) ? (
                            <Button 
                              size="sm" 
                              variant="outline" 
