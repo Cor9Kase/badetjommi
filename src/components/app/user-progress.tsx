@@ -29,11 +29,11 @@ export function UserProgress({
       {userAvatar ? (
         <Avatar className="h-10 w-10">
           <AvatarImage src={userAvatar} alt={userName} data-ai-hint="brukeravatar"/>
-          <AvatarFallback>{userName.substring(0, 2).toUpperCase()}</AvatarFallback>
+          <AvatarFallback>{typeof userName === 'string' ? userName.substring(0, 2).toUpperCase() : '??'}</AvatarFallback>
         </Avatar>
       ) : (
         <Avatar className="h-10 w-10 bg-primary text-primary-foreground flex items-center justify-center">
-            <AvatarFallback>{userName.substring(0, 2).toUpperCase()}</AvatarFallback>
+            <AvatarFallback>{typeof userName === 'string' ? userName.substring(0, 2).toUpperCase() : '??'}</AvatarFallback>
         </Avatar>
       )}
       <div>

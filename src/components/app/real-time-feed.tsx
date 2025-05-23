@@ -164,7 +164,7 @@ export function RealTimeFeed() {
                 <a className="flex items-center space-x-3 group">
                   <Avatar className="h-11 w-11 border-2 border-primary/50">
                     <AvatarImage src={entry.userAvatar || `https://picsum.photos/seed/${entry.userId}/40/40`} alt={entry.userName} data-ai-hint="brukeravatar"/>
-                    <AvatarFallback>{entry.userName.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    <AvatarFallback>{typeof entry.userName === 'string' ? entry.userName.substring(0, 2).toUpperCase() : '??'}</AvatarFallback>
                   </Avatar>
                   <div>
                     <CardTitle className="text-lg font-semibold group-hover:underline">{entry.userName}</CardTitle>
