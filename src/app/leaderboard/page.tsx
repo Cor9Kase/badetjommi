@@ -1,6 +1,8 @@
 
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { UserProgress } from "@/components/app/user-progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trophy, Waves } from "lucide-react";
