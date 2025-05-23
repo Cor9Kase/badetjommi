@@ -14,7 +14,7 @@ import type { BathEntry, PlannedBath } from "@/types/bath";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, type UserProfile } from "@/contexts/auth-context";
 import { db } from "@/lib/firebase";
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDoc } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDoc, Timestamp } from "firebase/firestore";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 
@@ -146,11 +146,15 @@ export function RealTimeFeed() {
     );
   }
   
-  const formatDateForDisplay = (dateString: string) => {
+  const formatDateForDisplay = (dateInput: string | Timestamp) => {
     try {
-      return format(new Date(dateString), "d. MMMM yyyy", { locale: nb });
+      const date =
+        dateInput instanceof Timestamp
+          ? dateInput.toDate()
+          : new Date(dateInput);
+      return format(date, "d. MMMM yyyy", { locale: nb });
     } catch (e) {
-      return dateString; // Fallback if date is not in expected 'yyyy-MM-dd' format
+      return String(dateInput); // Fallback if parsing fails
     }
   };
 

@@ -13,7 +13,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth, type UserProfile } from "@/contexts/auth-context";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, collection, query, where, orderBy, onSnapshot, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, orderBy, onSnapshot, updateDoc, arrayUnion, arrayRemove, Timestamp } from "firebase/firestore";
 import { format as formatDateFns } from "date-fns";
 import { nb } from "date-fns/locale";
 import Link from "next/link";
@@ -140,11 +140,15 @@ export default function UserProfilePage() {
     }
   };
 
-  const formatDateForDisplay = (dateString: string) => {
+  const formatDateForDisplay = (dateInput: string | Timestamp) => {
     try {
-      return formatDateFns(new Date(dateString), "d. MMMM yyyy", { locale: nb });
+      const date =
+        dateInput instanceof Timestamp
+          ? dateInput.toDate()
+          : new Date(dateInput);
+      return formatDateFns(date, "d. MMMM yyyy", { locale: nb });
     } catch (e) {
-      return dateString; 
+      return String(dateInput);
     }
   };
 
