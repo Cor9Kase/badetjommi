@@ -51,7 +51,7 @@ export function RealTimeFeed() {
         const data = doc.data() as BathEntry;
         items.push({ ...data, id: doc.id });
         if (data.type === 'planned') {
-            data.attendees.forEach(uid => attendeeIdsToFetch.add(uid));
+            data.attendees?.forEach(uid => attendeeIdsToFetch.add(uid));
         }
       });
 
@@ -206,8 +206,8 @@ export function RealTimeFeed() {
               <div className="space-y-2">
                 <h3 className="font-semibold text-md flex items-center"><CalendarCheck className="h-5 w-5 mr-2 text-primary" /> {entry.description}</h3>
                 {entry.location && <p className="text-sm text-muted-foreground">Sted: {entry.location}</p>}
-                <p className="text-sm text-muted-foreground">Antall påmeldte: {entry.attendees.length}</p>
-                {entry.attendees.length > 0 && (
+                <p className="text-sm text-muted-foreground">Antall påmeldte: {entry.attendees ? entry.attendees.length : 0}</p>
+                {entry.attendees && entry.attendees.length > 0 && (
                   <p className="text-sm text-muted-foreground">
                     Deltakere: {entry.attendees.map(uid => attendeesDetails[uid]?.name || 'Laster...').join(', ')}
                   </p>
@@ -233,15 +233,15 @@ export function RealTimeFeed() {
               <div className="flex w-full justify-between items-center">
                 <div className="flex items-center text-sm text-muted-foreground">
                   <Users className="h-4 w-4 mr-2" />
-                  <span>{entry.attendees.length} påmeldt</span>
+                  <span>{entry.attendees ? entry.attendees.length : 0} påmeldt</span>
                 </div>
                 {currentUser && entry.userId === currentUser.uid ? (
                    <Button size="sm" variant="outline" disabled>
                      <Info className="h-4 w-4 mr-2" /> Du arrangerer
                    </Button>
-                ) : currentUser && entry.attendees.includes(currentUser.uid) ? (
-                  <Button 
-                    size="sm" 
+                ) : currentUser && entry.attendees && entry.attendees.includes(currentUser.uid) ? (
+                  <Button
+                    size="sm"
                     variant="outline"
                     onClick={() => handleSignOff(entry.id, entry.description)}
                   >
