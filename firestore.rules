@@ -1,8 +1,26 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Public user profiles
+    match /users/{userId} {
+      allow read: if true;
+      // Users may only manage their own profile
+      allow create, update, delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Bath entries logged or planned by users
+    match /baths/{bathId} {
+      allow read: if true;
+      // Only authenticated users may create a bath for themselves
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Only the owner may modify or remove their bath
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
+
+    // Deny all other access
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }
