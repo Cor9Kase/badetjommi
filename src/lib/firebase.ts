@@ -6,12 +6,12 @@ import { getStorage } from 'firebase/storage';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyC2bFtXORXF-3w1_MrSiRw2E2K4uNBLBjM", // This was already set
-  authDomain: "arctic-splash-challenge.firebaseapp.com",
-  projectId: "arctic-splash-challenge",
-  storageBucket: "arctic-splash-challenge.firebasestorage.app", // Corrected to .firebasestorage.app
-  messagingSenderId: "224667120742",
-  appId: "1:224667120742:web:88c710436311b3c8fb69a7" // Updated appId
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
 };
 
 // Initialize Firebase
