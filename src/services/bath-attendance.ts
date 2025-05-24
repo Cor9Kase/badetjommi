@@ -1,6 +1,6 @@
 // Helper functions to join and leave planned baths using Firestore transactions
-import { db } from '@/lib/firebase';
-import { doc, runTransaction, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
+import { doc, runTransaction } from 'firebase/firestore';
 
 /**
  * Adds the current user's uid to the attendees array of a bath document.
@@ -10,6 +10,9 @@ import { doc, runTransaction, arrayUnion, arrayRemove } from 'firebase/firestore
  * @param uid The uid of the user attending
  */
 export async function joinBath(bathId: string, uid: string): Promise<void> {
+  if (!auth.currentUser || auth.currentUser.uid !== uid) {
+    throw new Error('User must be logged in');
+  }
   const bathRef = doc(db, 'baths', bathId);
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(bathRef);
@@ -21,8 +24,8 @@ export async function joinBath(bathId: string, uid: string): Promise<void> {
     if (current.includes(uid)) {
       return;
     }
-    // Use arrayUnion to avoid overwriting other fields and ensure atomic add
-    tx.update(bathRef, { attendees: arrayUnion(uid) });
+    // Update attendees array directly to satisfy security rules
+    tx.update(bathRef, { attendees: [...current, uid] });
   });
 }
 
@@ -33,6 +36,9 @@ export async function joinBath(bathId: string, uid: string): Promise<void> {
  * @param uid The uid of the user to remove
  */
 export async function leaveBath(bathId: string, uid: string): Promise<void> {
+  if (!auth.currentUser || auth.currentUser.uid !== uid) {
+    throw new Error('User must be logged in');
+  }
   const bathRef = doc(db, 'baths', bathId);
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(bathRef);
@@ -44,7 +50,8 @@ export async function leaveBath(bathId: string, uid: string): Promise<void> {
     if (!current.includes(uid)) {
       return;
     }
-    // Use arrayRemove to atomically remove the user without touching other fields
-    tx.update(bathRef, { attendees: arrayRemove(uid) });
+    // Update attendees array directly to satisfy security rules
+    tx.update(bathRef, { attendees: current.filter((id) => id !== uid) });
   });
 }
+
