@@ -16,7 +16,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth, type UserProfile } from "@/contexts/auth-context";
 import { db } from "@/lib/firebase";
 import { useNotifications } from "@/contexts/notification-context";
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDoc, Timestamp, increment } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, getDoc, Timestamp, increment } from "firebase/firestore";
+import { joinBath, leaveBath } from "@/services/bath-attendance";
 
 import { CommentsDialog } from "./comments-dialog";
 import { format } from "date-fns";
@@ -109,11 +110,8 @@ export function RealTimeFeed() {
       });
       return;
     }
-    const bathDocRef = doc(db, "baths", plannedBathId);
     try {
-      await updateDoc(bathDocRef, {
-        attendees: arrayUnion(currentUser.uid)
-      });
+      await joinBath(plannedBathId, currentUser.uid);
       // Optimistically update local state (attendeesDetails will eventually catch up via snapshot)
       // No need to directly setAttendeesDetails here as the onSnapshot listener will handle it
       toast({
@@ -144,11 +142,8 @@ export function RealTimeFeed() {
       return;
     }
 
-    const bathDocRef = doc(db, "baths", plannedBathId);
     try {
-      await updateDoc(bathDocRef, {
-        attendees: arrayRemove(currentUser.uid)
-      });
+      await leaveBath(plannedBathId, currentUser.uid);
       toast({
         title: "Avmeldt!",
         description: `Du er nå avmeldt "${bathDescription}".`,
