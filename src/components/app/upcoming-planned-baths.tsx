@@ -3,6 +3,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { CalendarCheck, Users, UserMinus, UserPlus, Info, Waves } from "lucide-react";
 import Image from "next/image";
@@ -128,9 +129,21 @@ export function UpcomingPlannedBaths() {
 
   if (authLoading || loadingBaths) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
-        <Waves className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-muted-foreground">Laster inn planlagte bad...</p>
+      <div className="space-y-6">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <Card key={i} className="overflow-hidden shadow-md bg-card">
+            <CardHeader className="p-4 sm:p-6 flex items-center space-x-3">
+              <Skeleton className="h-11 w-11 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-1/3" />
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 pt-0 sm:p-6 space-y-2">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-3 w-1/2" />
+            </CardContent>
+          </Card>
+        ))}
       </div>
     );
   }
@@ -147,7 +160,7 @@ export function UpcomingPlannedBaths() {
     <div className="space-y-6">
       {baths.map((bath) => (
         <Card key={bath.id} className="overflow-hidden shadow-md bg-card">
-          <CardHeader className="p-4">
+          <CardHeader className="p-4 sm:p-6">
             <div className="flex items-center space-x-3">
               <Link href={`/profil/${bath.userId}`} className="flex items-center space-x-3 group">
                 <Avatar className="h-11 w-11 border-2 border-primary/50">
@@ -160,8 +173,8 @@ export function UpcomingPlannedBaths() {
               </Link>
             </div>
           </CardHeader>
-          <CardContent className="p-4 pt-0 space-y-2">
-            <h3 className="font-semibold text-md flex items-center"><CalendarCheck className="h-5 w-5 mr-2 text-primary" /> {bath.description}</h3>
+          <CardContent className="p-4 pt-0 sm:p-6 space-y-2">
+            <h3 className="font-semibold text-lg flex items-center"><CalendarCheck className="h-5 w-5 mr-2 text-primary" /> {bath.description}</h3>
             {bath.location && <p className="text-sm text-muted-foreground">Sted: {bath.location}</p>}
             <p className="text-sm text-muted-foreground">{formatDateForDisplay(bath.date)} kl. {bath.time}</p>
             <p className="text-sm text-muted-foreground">Antall påmeldte: {bath.attendees ? bath.attendees.length : 0}</p>

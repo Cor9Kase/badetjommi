@@ -458,6 +458,7 @@ export function BathLoggingForm() {
                       alt="Forhåndsvisning av bildebevis"
                       width={200}
                       height={200}
+                      sizes="200px"
                       className="rounded-md object-cover"
                       data-ai-hint="badebilde forhåndsvisning"
                     />

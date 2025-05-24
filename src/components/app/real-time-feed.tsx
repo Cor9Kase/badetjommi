@@ -4,6 +4,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { MessageCircle, ThumbsUp, Heart, PartyPopper, Droplets, CalendarCheck, Users, UserCheck, UserPlus, Info, UserMinus, Smile, Waves } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -23,7 +24,7 @@ import { nb } from "date-fns/locale";
 
 
 const ReactionButton: FC<{ icon: React.ElementType, count: number, label: string, onClick?: () => void, disabled?: boolean }> = ({ icon: Icon, count, label, onClick, disabled }) => (
-  <Button variant="ghost" size="sm" className="flex items-center gap-1 text-muted-foreground hover:text-accent-foreground" onClick={onClick} disabled={disabled}>
+  <Button variant="ghost" size="sm" className="flex items-center gap-1 text-muted-foreground hover:text-accent" onClick={onClick} disabled={disabled}>
     <Icon className="h-4 w-4" />
     <span>{count}</span>
     <span className="sr-only">{label}</span>
@@ -161,9 +162,22 @@ export function RealTimeFeed() {
 
   if (authLoading || feedLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
-        <Waves className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-muted-foreground">Laster inn badefeed...</p>
+      <div className="space-y-6">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Card key={i} className="overflow-hidden shadow-md bg-card">
+            <CardHeader className="p-4 sm:p-6 flex items-center space-x-3">
+              <Skeleton className="h-11 w-11 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-3 w-1/4" />
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 pt-0 sm:p-6 space-y-2">
+              <Skeleton className="aspect-video w-full rounded-md" />
+              <Skeleton className="h-4 w-3/4" />
+            </CardContent>
+          </Card>
+        ))}
       </div>
     );
   }
@@ -192,9 +206,9 @@ export function RealTimeFeed() {
 
   return (
     <div className="space-y-6">
-      {feedItems.map((entry) => (
+      {feedItems.map((entry, index) => (
         <Card key={entry.id} className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 bg-card">
-          <CardHeader className="p-4">
+          <CardHeader className="p-4 sm:p-6">
             <div className="flex items-center space-x-3">
               <Link href={`/profil/${entry.userId}`} passHref legacyBehavior>
                 <a className="flex items-center space-x-3 group">
@@ -204,7 +218,7 @@ export function RealTimeFeed() {
                   </Avatar>
                   <div>
                     <CardTitle className="text-lg font-semibold group-hover:underline">{entry.userName}</CardTitle>
-                    <CardDescription className="text-xs text-muted-foreground">
+                    <CardDescription className="text-sm text-muted-foreground">
                       {entry.type === 'planned' ? 'Planla et bad for ' : ''}
                       {formatDateForDisplay(entry.date)} kl. {entry.time}
                       {entry.location && ` @ ${entry.location}`}
@@ -214,13 +228,15 @@ export function RealTimeFeed() {
               </Link>
             </div>
           </CardHeader>
-          <CardContent className="p-4 pt-0">
+          <CardContent className="p-4 pt-0 sm:p-6">
             {entry.type === 'logged' && entry.imageUrl && (
               <div className="mb-4 rounded-lg overflow-hidden aspect-video relative">
-                <Image 
-                    src={entry.imageUrl} 
-                    alt={`Bad av ${entry.userName}`} 
+                <Image
+                    src={entry.imageUrl}
+                    alt={`Bad av ${entry.userName}`}
                     fill
+                    sizes="(max-width: 768px) 100vw, 600px"
+                    priority={index === 0}
                     className="object-cover"
                     data-ai-hint="naturskjønt vann"
                 />
@@ -240,7 +256,7 @@ export function RealTimeFeed() {
             
             {entry.type === 'planned' && (
               <div className="space-y-2">
-                <h3 className="font-semibold text-md flex items-center"><CalendarCheck className="h-5 w-5 mr-2 text-primary" /> {entry.description}</h3>
+                <h3 className="font-semibold text-lg flex items-center"><CalendarCheck className="h-5 w-5 mr-2 text-primary" /> {entry.description}</h3>
                 {entry.location && <p className="text-sm text-muted-foreground">Sted: {entry.location}</p>}
                 <p className="text-sm text-muted-foreground">Antall påmeldte: {entry.attendees ? entry.attendees.length : 0}</p>
                 {entry.attendees && entry.attendees.length > 0 && (
@@ -281,7 +297,7 @@ export function RealTimeFeed() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-muted-foreground hover:text-accent-foreground"
+                  className="text-muted-foreground hover:text-accent"
                   onClick={() => setOpenCommentsId(entry.id)}
                 >
                   <MessageCircle className="h-4 w-4 mr-1" />

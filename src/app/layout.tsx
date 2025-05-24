@@ -30,7 +30,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="nb">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen text-base md:text-lg`}>
         <AuthProvider> {/* Wrap with AuthProvider */}
           <NotificationProvider>
           <header className="bg-primary text-primary-foreground py-4 px-4 md:px-8 shadow-md sticky top-0 z-40">
