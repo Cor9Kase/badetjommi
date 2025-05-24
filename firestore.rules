@@ -14,8 +14,19 @@ service cloud.firestore {
       allow read: if true;
       // Only authenticated users may create a bath for themselves
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      // Only the owner may modify or remove their bath
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Only the owner may remove their bath
+      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+
+      // Allow owners full updates. Other authenticated users may modify only
+      // the 'attendees' field to add or remove themselves.
+      allow update: if request.auth != null && (
+        request.auth.uid == resource.data.userId || (
+          request.resource.data.keys().hasOnly(['attendees']) && (
+            request.resource.data.attendeesdiff(resource.data.attendees).added().hasOnly([request.auth.uid]) ||
+            request.resource.data.attendeesdiff(resource.data.attendees).removed().hasOnly([request.auth.uid])
+          )
+        )
+      );
     }
 
     // Deny all other access
