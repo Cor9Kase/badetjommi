@@ -5,13 +5,14 @@ service cloud.firestore {
 
     // Helper function to check 'attendees' update logic
     function isUpdatingSelfInAttendees() {
-      // Use .get() to safely access 'attendees', providing an empty list if it doesn't exist.
-      let currentAttendees = resource.data.get('attendees', []);
       let nextAttendees = request.resource.data.attendees;
-      let diff = nextAttendees.diff(currentAttendees);
-      // Ensure only the current user is being added OR only the current user is being removed.
-      return (diff.added().size() == 1 && diff.added()[0] == request.auth.uid && diff.removed().size() == 0) ||
-             (diff.removed().size() == 1 && diff.removed()[0] == request.auth.uid && diff.added().size() == 0);
+      let isList = nextAttendees is list;
+      let currentAttendees = resource.data.get('attendees', []); // Default to empty list
+      let diff = isList ? nextAttendees.diff(currentAttendees) : [];
+      return isList && (
+        (diff.added().size() == 1 && diff.added()[0] == request.auth.uid && diff.removed().size() == 0) ||
+        (diff.removed().size() == 1 && diff.removed()[0] == request.auth.uid && diff.added().size() == 0)
+      );
     }
 
     // Public user profiles
@@ -35,10 +36,10 @@ service cloud.firestore {
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount']) ||
         // Allow updates only to 'reactions' and 'commentCount'
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions', 'commentCount']) ||
-        // Allow updates only to 'attendees' IF the user is adding/removing themselves
+        // Condition 5: Targeted update to 'attendees' by adding/removing self (applies to any user)
         (
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendees']) &&
-          isUpdatingSelfInAttendees() // Call the function here
+          request.writeFields.hasOnly(['attendees']) && 
+          isUpdatingSelfInAttendees()
         )
       );
 
