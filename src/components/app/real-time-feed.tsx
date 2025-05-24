@@ -14,7 +14,9 @@ import type { BathEntry, PlannedBath } from "@/types/bath";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, type UserProfile } from "@/contexts/auth-context";
 import { db } from "@/lib/firebase";
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDoc, Timestamp } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDoc, Timestamp, increment } from "firebase/firestore";
+
+import { CommentsDialog } from "./comments-dialog";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 
@@ -37,6 +39,7 @@ export function RealTimeFeed() {
   const [feedItems, setFeedItems] = useState<BathEntry[]>([]);
   const [attendeesDetails, setAttendeesDetails] = useState<AttendeeDetails>({});
   const [feedLoading, setFeedLoading] = useState(true);
+  const [openCommentsId, setOpenCommentsId] = useState<string | null>(null);
 
   useEffect(() => {
     setFeedLoading(true);
@@ -123,6 +126,27 @@ export function RealTimeFeed() {
     } catch (error) {
       console.error("Error signing off from bath: ", error);
       toast({ variant: "destructive", title: "Feil", description: "Kunne ikke melde deg av." });
+    }
+  };
+
+  const handleReaction = async (
+    bathId: string,
+    reaction: 'thumbsUp' | 'heart' | 'party'
+  ) => {
+    if (!currentUser) {
+      toast({
+        variant: 'destructive',
+        title: 'Logg Inn',
+        description: 'Du må være logget inn for å reagere.'
+      });
+      return;
+    }
+    try {
+      const bathDocRef = doc(db, 'baths', bathId);
+      await updateDoc(bathDocRef, { [`reactions.${reaction}`]: increment(1) });
+    } catch (error) {
+      console.error('Error updating reaction: ', error);
+      toast({ variant: 'destructive', title: 'Feil', description: 'Kunne ikke lagre reaksjonen.' });
     }
   };
 
@@ -224,14 +248,42 @@ export function RealTimeFeed() {
             {entry.type === 'logged' ? (
               <>
                 <div className="flex items-center space-x-1">
-                  <ReactionButton icon={ThumbsUp} count={entry.reactions.thumbsUp} label="Tommel Opp" />
-                  <ReactionButton icon={Heart} count={entry.reactions.heart} label="Hjerte" />
-                  <ReactionButton icon={PartyPopper} count={entry.reactions.party} label="Fest" />
+                  <ReactionButton
+                    icon={ThumbsUp}
+                    count={entry.reactions.thumbsUp}
+                    label="Tommel Opp"
+                    onClick={() => handleReaction(entry.id, 'thumbsUp')}
+                    disabled={!currentUser}
+                  />
+                  <ReactionButton
+                    icon={Heart}
+                    count={entry.reactions.heart}
+                    label="Hjerte"
+                    onClick={() => handleReaction(entry.id, 'heart')}
+                    disabled={!currentUser}
+                  />
+                  <ReactionButton
+                    icon={PartyPopper}
+                    count={entry.reactions.party}
+                    label="Fest"
+                    onClick={() => handleReaction(entry.id, 'party')}
+                    disabled={!currentUser}
+                  />
                 </div>
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-accent-foreground">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground hover:text-accent-foreground"
+                  onClick={() => setOpenCommentsId(entry.id)}
+                >
                   <MessageCircle className="h-4 w-4 mr-1" />
-                  {entry.commentCount} Kommentarer {/* TODO: Implement comments functionality */}
+                  {entry.commentCount} Kommentarer
                 </Button>
+                <CommentsDialog
+                  bathId={entry.id}
+                  open={openCommentsId === entry.id}
+                  onOpenChange={(open) => !open && setOpenCommentsId(null)}
+                />
               </>
             ) : ( // Planned bath
               <div className="flex w-full justify-between items-center">
