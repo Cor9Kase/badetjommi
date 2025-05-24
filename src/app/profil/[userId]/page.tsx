@@ -13,7 +13,8 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth, type UserProfile } from "@/contexts/auth-context";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, getDocs, collection, query, where, orderBy, onSnapshot, updateDoc, arrayUnion, arrayRemove, Timestamp, documentId } from "firebase/firestore";
+import { doc, getDoc, getDocs, collection, query, where, orderBy, onSnapshot, Timestamp, documentId } from "firebase/firestore";
+import { joinBath, leaveBath } from "@/services/bath-attendance";
 import { format as formatDateFns } from "date-fns";
 import { nb } from "date-fns/locale";
 import Link from "next/link";
@@ -112,11 +113,8 @@ export default function UserProfilePage() {
         });
         return;
     }
-    const bathDocRef = doc(db, "baths", bathId);
     try {
-        await updateDoc(bathDocRef, {
-            attendees: arrayUnion(loggedInUser.uid)
-        });
+        await joinBath(bathId, loggedInUser.uid);
         // Optimistically update local state for attendees if needed, or rely on snapshot listener
         setAttendeesDetails(prev => ({
             ...prev,
@@ -151,11 +149,8 @@ export default function UserProfilePage() {
       return;
     }
 
-    const bathDocRef = doc(db, "baths", bathId);
     try {
-      await updateDoc(bathDocRef, {
-        attendees: arrayRemove(loggedInUser.uid),
-      });
+      await leaveBath(bathId, loggedInUser.uid);
       toast({
         title: "Avmeldt!",
         description: `Du er nå avmeldt "${bathDescription}".`,
