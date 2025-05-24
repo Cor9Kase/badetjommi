@@ -98,7 +98,12 @@ export default function ProfilPage() {
           <CardTitle className="text-2xl font-semibold">Min Progresjon</CardTitle>
         </CardHeader>
         <CardContent>
-          <UserProgress userName={userProfile.name} currentBaths={userProfile.currentBaths} targetBaths={userProfile.targetBaths} userAvatar={userProfile.avatarUrl} />
+          <UserProgress
+            userName={userProfile!.name}
+            currentBaths={userProfile!.currentBaths}
+            targetBaths={userProfile!.targetBaths}
+            userAvatar={userProfile!.avatarUrl}
+          />
         </CardContent>
       </Card>
       
