@@ -13,7 +13,8 @@ import { useAuth, type UserProfile } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { useNotifications } from "@/contexts/notification-context";
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDocs, where, documentId } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, getDocs, where, documentId } from "firebase/firestore";
+import { joinBath, leaveBath } from "@/services/bath-attendance";
 import type { BathEntry, PlannedBath } from "@/types/bath";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
@@ -99,11 +100,8 @@ export function UpcomingPlannedBaths() {
       });
       return;
     }
-    const bathRef = doc(db, "baths", bathId);
     try {
-      await updateDoc(bathRef, {
-        attendees: arrayUnion(currentUser.uid)
-      });
+      await joinBath(bathId, currentUser.uid);
       toast({ title: "Påmeldt!", description: `Du er nå påmeldt \"${description}\".` });
     } catch (error) {
       console.error("Error signing up: ", error);
@@ -126,11 +124,8 @@ export function UpcomingPlannedBaths() {
       return;
     }
 
-    const bathRef = doc(db, "baths", bathId);
     try {
-      await updateDoc(bathRef, {
-        attendees: arrayRemove(currentUser.uid)
-      });
+      await leaveBath(bathId, currentUser.uid);
       toast({ title: "Avmeldt!", description: `Du er nå avmeldt \"${description}\".` });
     } catch (error) {
       console.error("Error signing off: ", error);
