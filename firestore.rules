@@ -22,20 +22,9 @@ service cloud.firestore {
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions', 'commentCount']) || (
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendees']) &&
           (
-            (
-              ('attendees' in resource.data) &&
-              (
-                request.resource.data.attendees.diff(resource.data.attendees).added().hasOnly([request.auth.uid]) ||
-                request.resource.data.attendees.diff(resource.data.attendees).removed().hasOnly([request.auth.uid])
-              )
-            ) ||
-            (
-              !('attendees' in resource.data) &&
-              (
-                request.resource.data.attendees.size() == 1 &&
-                request.resource.data.attendees.hasOnly([request.auth.uid])
-              )
-            )
+            let current = ('attendees' in resource.data) ? resource.data.attendees : [];
+            let diff = request.resource.data.attendees.diff(current);
+            diff.added().hasOnly([request.auth.uid]) || diff.removed().hasOnly([request.auth.uid])
           )
         )
       );
