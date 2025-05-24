@@ -82,8 +82,8 @@ export function BathLoggingForm() {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [isCameraDialogOpen, setIsCameraDialogOpen] = useState(false);
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [initialDate, setInitialDate] = useState<Date | undefined>(undefined);
@@ -422,45 +422,51 @@ export function BathLoggingForm() {
         <FormField
           control={form.control}
           name="image"
-          render={({ field: { onChange, value, ...restField }}) => ( 
-            <FormItem>
-              <FormLabel className="flex items-center">
-                <ImagePlus className="mr-2 h-4 w-4" /> Bildebevis (Valgfritt)
-              </FormLabel>
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full sm:w-auto">
-                  <Upload className="mr-2 h-4 w-4" /> Last opp fil
-                </Button>
-                <Input
+          render={({ field }) => {
+            const { ref, onChange: fieldOnChange, value: _value, ...fieldProps } = field;
+            return (
+              <FormItem>
+                <FormLabel className="flex items-center">
+                  <ImagePlus className="mr-2 h-4 w-4" /> Bildebevis (Valgfritt)
+                </FormLabel>
+                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                  <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full sm:w-auto">
+                    <Upload className="mr-2 h-4 w-4" /> Last opp fil
+                  </Button>
+                  <Input
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={handleImageChange}
-                    {...restField}
                     ref={(el) => {
+                      ref(el);
                       fileInputRef.current = el;
-                      restField.ref(el);
                     }}
-                />
-                <Button type="button" variant="outline" onClick={() => setIsCameraDialogOpen(true)} className="w-full sm:w-auto">
-                  <Camera className="mr-2 h-4 w-4" /> Ta bilde
-                </Button>
-              </div>
-              {previewImage && (
-                <div className="mt-4">
-                  <Image
-                    src={previewImage}
-                    alt="Forhåndsvisning av bildebevis"
-                    width={200}
-                    height={200}
-                    className="rounded-md object-cover"
-                    data-ai-hint="badebilde forhåndsvisning"
+                    onChange={(e) => {
+                      fieldOnChange(e);
+                      handleImageChange(e);
+                    }}
+                    {...fieldProps}
                   />
+                  <Button type="button" variant="outline" onClick={() => setIsCameraDialogOpen(true)} className="w-full sm:w-auto">
+                    <Camera className="mr-2 h-4 w-4" /> Ta bilde
+                  </Button>
                 </div>
-              )}
-              <FormMessage />
-            </FormItem>
-          )}
+                {previewImage && (
+                  <div className="mt-4">
+                    <Image
+                      src={previewImage}
+                      alt="Forhåndsvisning av bildebevis"
+                      width={200}
+                      height={200}
+                      className="rounded-md object-cover"
+                      data-ai-hint="badebilde forhåndsvisning"
+                    />
+                  </div>
+                )}
+                <FormMessage />
+              </FormItem>
+            );
+          }}
         />
         <canvas ref={canvasRef} className="hidden"></canvas>
 

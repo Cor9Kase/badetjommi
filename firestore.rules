@@ -22,8 +22,8 @@ service cloud.firestore {
       allow update: if request.auth != null && (
         request.auth.uid == resource.data.userId || (
           request.resource.data.keys().hasOnly(['attendees']) && (
-            request.resource.data.attendeesdiff(resource.data.attendees).added().hasOnly([request.auth.uid]) ||
-            request.resource.data.attendeesdiff(resource.data.attendees).removed().hasOnly([request.auth.uid])
+            request.resource.data.attendees.diff(resource.data.attendees).added().hasOnly([request.auth.uid]) ||
+            request.resource.data.attendees.diff(resource.data.attendees).removed().hasOnly([request.auth.uid])
           )
         )
       );

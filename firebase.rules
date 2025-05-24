@@ -30,8 +30,8 @@ service cloud.firestore {
                     // Any authenticated user can update the 'attendees' list for a 'planned' bath
                     (request.resource.data.type == 'planned' && 
                       (
-                        (request.resource.data.attendeesdiff(resource.data.attendees).added().hasOnly([request.auth.uid])) || // User is adding themselves
-                        (request.resource.data.attendeesdiff(resource.data.attendees).removed().hasOnly([request.auth.uid]))  // User is removing themselves
+                        (request.resource.data.attendees.diff(resource.data.attendees).added().hasOnly([request.auth.uid])) || // User is adding themselves
+                        (request.resource.data.attendees.diff(resource.data.attendees).removed().hasOnly([request.auth.uid]))  // User is removing themselves
                       ) &&
                       // Ensure no other fields are being changed when modifying attendees, unless by owner
                       (request.resource.data.keys().hasOnly(['attendees']) || resource.data.userId == request.auth.uid)
