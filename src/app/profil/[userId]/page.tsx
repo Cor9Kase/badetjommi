@@ -121,22 +121,36 @@ export default function UserProfilePage() {
   };
 
   const handleSignOffFromPlannedBath = async (bathId: string, bathDescription: string) => {
-     if (!loggedInUser) {
-        toast({ variant: "destructive", title: "Logg Inn", description: "Du må være logget inn." });
-        return;
+    if (!loggedInUser) {
+      toast({ variant: "destructive", title: "Logg Inn", description: "Du må være logget inn." });
+      return;
     }
+
+    // Find the bath locally to check attendance
+    const bath = bathLog.find(
+      (b): b is PlannedBath => b.id === bathId && b.type === "planned"
+    );
+    if (!bath?.attendees?.includes(loggedInUser.uid)) {
+      toast({
+        variant: "destructive",
+        title: "Ikke påmeldt",
+        description: "Du er ikke registrert for dette badet.",
+      });
+      return;
+    }
+
     const bathDocRef = doc(db, "baths", bathId);
-     try {
-        await updateDoc(bathDocRef, {
-            attendees: arrayRemove(loggedInUser.uid)
-        });
-        toast({
-            title: "Avmeldt!",
-            description: `Du er nå avmeldt "${bathDescription}".`,
-        });
+    try {
+      await updateDoc(bathDocRef, {
+        attendees: arrayRemove(loggedInUser.uid),
+      });
+      toast({
+        title: "Avmeldt!",
+        description: `Du er nå avmeldt "${bathDescription}".`,
+      });
     } catch (error) {
-        console.error("Error signing off from bath: ", error);
-        toast({ variant: "destructive", title: "Feil", description: "Kunne ikke melde deg av." });
+      console.error("Error signing off from bath: ", error);
+      toast({ variant: "destructive", title: "Feil", description: "Kunne ikke melde deg av." });
     }
   };
 
