@@ -13,7 +13,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth, type UserProfile } from "@/contexts/auth-context";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, collection, query, where, orderBy, onSnapshot, updateDoc, arrayUnion, arrayRemove, Timestamp } from "firebase/firestore";
+import { doc, getDoc, getDocs, collection, query, where, orderBy, onSnapshot, updateDoc, arrayUnion, arrayRemove, Timestamp, documentId } from "firebase/firestore";
 import { format as formatDateFns } from "date-fns";
 import { nb } from "date-fns/locale";
 import Link from "next/link";
@@ -71,18 +71,20 @@ export default function UserProfilePage() {
 
         // Fetch details for attendees
         if (attendeeIdsToFetch.size > 0) {
+            const idsToQuery = Array.from(attendeeIdsToFetch).filter(uid => !attendeesDetails[uid]);
             const newAttendeesDetails: Record<string, Pick<UserProfile, 'name' | 'avatarUrl'>> = {};
-            for (const uid of Array.from(attendeeIdsToFetch)) {
-                if (!attendeesDetails[uid]) { // Only fetch if not already fetched
-                    const userDocRef = doc(db, "users", uid);
-                    const userSnap = await getDoc(userDocRef);
-                    if (userSnap.exists()) {
-                        const userData = userSnap.data() as UserProfile;
-                        newAttendeesDetails[uid] = { name: userData.name, avatarUrl: userData.avatarUrl };
-                    }
-                }
+            for (let i = 0; i < idsToQuery.length; i += 10) {
+                const chunk = idsToQuery.slice(i, i + 10);
+                const usersQ = query(collection(db, "users"), where(documentId(), "in", chunk));
+                const usersSnap = await getDocs(usersQ);
+                usersSnap.forEach(userSnap => {
+                    const userData = userSnap.data() as UserProfile;
+                    newAttendeesDetails[userSnap.id] = { name: userData.name, avatarUrl: userData.avatarUrl };
+                });
             }
-            setAttendeesDetails(prev => ({ ...prev, ...newAttendeesDetails }));
+            if (Object.keys(newAttendeesDetails).length > 0) {
+                setAttendeesDetails(prev => ({ ...prev, ...newAttendeesDetails }));
+            }
         }
         setLogLoading(false);
       }, (error) => {

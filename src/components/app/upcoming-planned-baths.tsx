@@ -13,7 +13,7 @@ import { useAuth, type UserProfile } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { useNotifications } from "@/contexts/notification-context";
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDoc } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDocs, where, documentId } from "firebase/firestore";
 import type { BathEntry, PlannedBath } from "@/types/bath";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
@@ -55,18 +55,20 @@ export function UpcomingPlannedBaths() {
       setBaths(planned);
 
       if (attendeeIdsToFetch.size > 0) {
+        const idsToQuery = Array.from(attendeeIdsToFetch).filter((uid) => !attendeesDetails[uid]);
         const newDetails: AttendeeDetails = {};
-        for (const uid of Array.from(attendeeIdsToFetch)) {
-          if (!attendeesDetails[uid]) {
-            const userDocRef = doc(db, "users", uid);
-            const userSnap = await getDoc(userDocRef);
-            if (userSnap.exists()) {
-              const userData = userSnap.data() as UserProfile;
-              newDetails[uid] = { name: userData.name, avatarUrl: userData.avatarUrl };
-            }
-          }
+        for (let i = 0; i < idsToQuery.length; i += 10) {
+          const chunk = idsToQuery.slice(i, i + 10);
+          const userQuery = query(collection(db, "users"), where(documentId(), "in", chunk));
+          const usersSnap = await getDocs(userQuery);
+          usersSnap.forEach((userSnap) => {
+            const userData = userSnap.data() as UserProfile;
+            newDetails[userSnap.id] = { name: userData.name, avatarUrl: userData.avatarUrl };
+          });
         }
-        setAttendeesDetails((prev) => ({ ...prev, ...newDetails }));
+        if (Object.keys(newDetails).length > 0) {
+          setAttendeesDetails((prev) => ({ ...prev, ...newDetails }));
+        }
       }
       setLoadingBaths(false);
     }, (error) => {
