@@ -279,7 +279,7 @@ export function BathLoggingForm() {
     }
   };
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   
   if (authLoading || !initialDate) { // Also wait for initialDate to be set to prevent hydration issues
     return <div className="flex justify-center items-center p-8"><Waves className="h-8 w-8 animate-spin" /> Laster...</div>;
@@ -435,9 +435,12 @@ export function BathLoggingForm() {
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    ref={fileInputRef}
                     onChange={handleImageChange}
                     {...restField}
+                    ref={(el) => {
+                      fileInputRef.current = el;
+                      restField.ref(el);
+                    }}
                 />
                 <Button type="button" variant="outline" onClick={() => setIsCameraDialogOpen(true)} className="w-full sm:w-auto">
                   <Camera className="mr-2 h-4 w-4" /> Ta bilde
