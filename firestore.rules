@@ -17,10 +17,10 @@ service cloud.firestore {
 
       allow update: if request.auth != null && (
         request.auth.uid == resource.data.userId ||
-        request.resource.data.keys().hasOnly(['reactions']) ||
-        request.resource.data.keys().hasOnly(['commentCount']) ||
-        request.resource.data.keys().hasOnly(['reactions', 'commentCount']) || (
-          request.resource.data.keys().hasOnly(['attendees']) &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions']) ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount']) ||
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions', 'commentCount']) || (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendees']) &&
           (
             (
               ('attendees' in resource.data) &&
