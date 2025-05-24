@@ -1,23 +1,96 @@
-{
-  "indexes": [
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "currentBaths", "order": "DESCENDING" },
-        { "fieldPath": "name", "order": "ASCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "baths",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" },
-        { "fieldPath": "__name__", "order": "DESCENDING" }
-      ]
+rules_version = '2';
+
+// ==================================
+// Firestore Regler
+// ==================================
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===== Users Samling =====
+    match /users/{userId} {
+      allow read: if true;
+      // Tillat oppretting HVIS bruker er logget inn, eier dokumentet, og oppgir brukernavn/e-post.
+      allow create: if request.auth != null && request.auth.uid == userId
+                      && request.resource.data.username != null
+                      && request.resource.data.email != null;
+      // Tillat oppdatering HVIS bruker er logget inn og eier dokumentet.
+      allow update: if request.auth != null && request.auth.uid == userId;
+      // Ikke tillat sletting fra klient.
+      allow delete: if false;
     }
-  ],
-  "fieldOverrides": []
+
+    // ===== Baths Samling =====
+    match /baths/{bathId} {
+      allow read: if true;
+      // Tillat oppretting HVIS bruker er logget inn og er eier.
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Tillat sletting HVIS bruker er logget inn og er eier.
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+
+      // Tillat oppdatering HVIS bruker er logget inn OG (er eier ELLER oppfyller 'attendees'-krav)
+      allow update: if request.auth != null && (
+
+        // Betingelse 1: Eieren kan oppdatere.
+        // ADVARSEL: Denne regelen er bred og lar eieren endre *alt*.
+        // Vurder å gjøre den mer spesifikk hvis nødvendig.
+        (resource.data.userId == request.auth.uid) ||
+
+        // Betingelse 2: Andre brukere kan KUN oppdatere 'attendees'-feltet
+        //              på 'planned' bad, ved å legge til/fjerne seg selv.
+        (
+          // Sjekk at badet er og forblir 'planned'.
+          resource.data.type == 'planned' && request.resource.data.type == 'planned' &&
+          // Sjekk at 'attendees' er en liste i den nye dataen.
+          request.resource.data.attendees is list &&
+          // Sjekk at KUN brukerens egen ID (string) legges til ELLER fjernes.
+          (
+            ( request.resource.data.attendees.diff(resource.data.get('attendees', [])).added().size() == 1 &&
+              request.resource.data.attendees.diff(resource.data.get('attendees', [])).added()[0] == request.auth.uid &&
+              request.resource.data.attendees.diff(resource.data.get('attendees', [])).removed().size() == 0 )
+            ||
+            ( request.resource.data.attendees.diff(resource.data.get('attendees', [])).removed().size() == 1 &&
+              request.resource.data.attendees.diff(resource.data.get('attendees', [])).removed()[0] == request.auth.uid &&
+              request.resource.data.attendees.diff(resource.data.get('attendees', [])).added().size() == 0 )
+          ) &&
+          // VIKTIG: Sjekk at KUN 'attendees'-feltet er det som endres.
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendees'])
+        )
+      );
+
+      // ===== Comments Undersamling =====
+      match /comments/{commentId} {
+        allow read: if true;
+        // Tillat oppretting HVIS bruker er logget inn og er eier av kommentaren.
+        allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+        // Ikke tillat oppdatering eller sletting.
+        allow update, delete: if false;
+      }
+    }
+
+    // ===== Standard Nekt (Valgfritt men Anbefalt) =====
+    // Hvis du vil være helt sikker på at ingenting annet er tillatt,
+    // kan du legge til en generell nekt-regel helt til slutt.
+    // Men vær forsiktig så den ikke blokker noe du trenger.
+    // match /{document=**} {
+    //   allow read, write: if false;
+    // }
+  }
+}
+
+// ==================================
+// Storage Regler
+// ==================================
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Avatars: Brukere kan skrive til sin egen, alle kan lese.
+    match /avatars/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    // Bath images: Brukere kan skrive til sine egne, alle kan lese.
+    match /baths/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
 }
