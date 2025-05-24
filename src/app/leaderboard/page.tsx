@@ -18,10 +18,26 @@ export default function LeaderboardPage() {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Load cached leaderboard if available to show something while Firestore loads
+    if (typeof window !== "undefined") {
+      const cached = localStorage.getItem("leaderboardData");
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached) as UserProfile[];
+          if (Array.isArray(parsed)) {
+            setLeaderboardData(parsed);
+          }
+        } catch (_) {
+          // ignore parse errors and clear invalid cache
+          localStorage.removeItem("leaderboardData");
+        }
+      }
+    }
+
     setLoading(true);
     const usersCollectionRef = collection(db, "users");
     // Order by currentBaths in descending order, then by name for tie-breaking
-    const q = query(usersCollectionRef, orderBy("currentBaths", "desc"), orderBy("name", "asc"), limit(20)); 
+    const q = query(usersCollectionRef, orderBy("currentBaths", "desc"), orderBy("name", "asc"), limit(20));
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const users: UserProfile[] = [];
@@ -29,6 +45,9 @@ export default function LeaderboardPage() {
         users.push(doc.data() as UserProfile);
       });
       setLeaderboardData(users);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("leaderboardData", JSON.stringify(users));
+      }
       setLoading(false);
     }, (error) => {
       console.error("Error fetching leaderboard data: ", error);
