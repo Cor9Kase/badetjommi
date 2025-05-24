@@ -21,3 +21,10 @@ This project uses Firebase for database services but is deployed through [Vercel
 ## Notes
 
 Only `firestore.rules` is used for security rules. The file `firebase.rules` is kept for reference and is not deployed.
+
+## Leaderboard Caching
+
+The leaderboard data is fetched in real time from Firestore. To provide a quick
+fallback when the network is slow, the last fetched leaderboard is now stored in
+`localStorage`. If available, this cached data is displayed immediately while
+new data is being loaded.
