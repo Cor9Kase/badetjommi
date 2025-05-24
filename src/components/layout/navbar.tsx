@@ -11,6 +11,7 @@ const navItemsBase = [
   { href: "/", label: "Feed", icon: Home, requiresAuth: false },
   { href: "/logg-bad", label: "Logg Bad", icon: ClipboardPlus, requiresAuth: true },
   { href: "/planlegg-bad", label: "Planlegg", icon: CalendarPlus, requiresAuth: true },
+  { href: "/planlagte-bad", label: "Kommende", icon: CalendarPlus, requiresAuth: false },
   { href: "/leaderboard", label: "Toppliste", icon: Trophy, requiresAuth: false },
 ];
 
