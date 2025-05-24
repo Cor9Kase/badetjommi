@@ -2,29 +2,37 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
     // Public user profiles
     match /users/{userId} {
       allow read: if true;
-      // Users may only manage their own profile
       allow create, update, delete: if request.auth != null && request.auth.uid == userId;
     }
 
     // Bath entries logged or planned by users
     match /baths/{bathId} {
       allow read: if true;
-      // Only authenticated users may create a bath for themselves
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      // Only the owner may remove their bath
       allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
 
-      // Allow owners full updates. Other authenticated users may modify only
-      // the 'attendees' field to add or remove themselves.
       allow update: if request.auth != null && (
         request.auth.uid == resource.data.userId || (
-          request.resource.data.keys().hasOnly(['attendees']) && (
-            let current = ('attendees' in resource.data) ? resource.data.attendees : [];
-            let diff = request.resource.data.attendees.diff(current);
-            diff.added().hasOnly([request.auth.uid]) || diff.removed().hasOnly([request.auth.uid])
+          request.resource.data.keys().hasOnly(['attendees']) &&
+          (
+            (
+              ('attendees' in resource.data) &&
+              (
+                request.resource.data.attendees.diff(resource.data.attendees).added().hasOnly([request.auth.uid]) ||
+                request.resource.data.attendees.diff(resource.data.attendees).removed().hasOnly([request.auth.uid])
+              )
+            ) ||
+            (
+              !('attendees' in resource.data) &&
+              (
+                request.resource.data.attendees.size() == 1 &&
+                request.resource.data.attendees.hasOnly([request.auth.uid])
+              )
+            )
           )
         )
       );
