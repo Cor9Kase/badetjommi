@@ -102,6 +102,16 @@ export default function UserProfilePage() {
         toast({ variant: "destructive", title: "Logg Inn", description: "Du må være logget inn for å melde deg på." });
         return;
     }
+    const bath = bathLog.find(
+      (b): b is PlannedBath => b.id === bathId && b.type === "planned"
+    );
+    if (bath?.attendees?.includes(loggedInUser.uid)) {
+        toast({
+            title: "Allerede påmeldt",
+            description: "Du er allerede påmeldt",
+        });
+        return;
+    }
     const bathDocRef = doc(db, "baths", bathId);
     try {
         await updateDoc(bathDocRef, {

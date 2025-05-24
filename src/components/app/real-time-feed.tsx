@@ -99,6 +99,16 @@ export function RealTimeFeed() {
       toast({ variant: "destructive", title: "Logg Inn", description: "Du må være logget inn for å melde deg på." });
       return;
     }
+    const bath = feedItems.find(
+      (b): b is PlannedBath => b.id === plannedBathId && b.type === "planned"
+    );
+    if (bath?.attendees?.includes(currentUser.uid)) {
+      toast({
+        title: "Allerede påmeldt",
+        description: "Du er allerede påmeldt",
+      });
+      return;
+    }
     const bathDocRef = doc(db, "baths", plannedBathId);
     try {
       await updateDoc(bathDocRef, {
