@@ -193,10 +193,10 @@ export function BathLoggingForm() {
         location: data.location || "",
         waterTemperature: data.waterTemperature || null,
         comments: data.comments || "",
-        imageUrl: imageUrl,
+        ...(imageUrl ? { imageUrl } : {}),
         reactions: { thumbsUp: 0, heart: 0, party: 0 },
         commentCount: 0,
-        createdAt: Date.now(), 
+        createdAt: Date.now(),
         type: 'logged',
     };
 
