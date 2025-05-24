@@ -34,6 +34,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
@@ -471,6 +472,9 @@ export function BathLoggingForm() {
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Ta Bildebevis</DialogTitle>
+            <DialogDescription>
+              Tillat kameraet og trykk “Knytt Bilde” for å lagre et foto.
+            </DialogDescription>
           </DialogHeader>
           <div className="py-4">
              <video ref={videoRef} className="w-full aspect-video rounded-md bg-muted" autoPlay muted playsInline />
