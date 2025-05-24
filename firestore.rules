@@ -5,10 +5,17 @@ service cloud.firestore {
 
     // Helper function to check 'attendees' update logic
     function isUpdatingSelfInAttendees() {
-      let nextAttendees = request.resource.data.attendees;
-      let isList = nextAttendees is list;
-      let currentAttendees = resource.data.get('attendees', []); // Default to empty list
-      let diff = isList ? nextAttendees.diff(currentAttendees) : [];
+      // Definer variabler med 'let' øverst i funksjonen.
+      let attendeesExists = 'attendees' in request.resource.data;
+      let nextAttendees = request.resource.data.get('attendees', null); // Bruk .get for sikkerhet
+      let isList = attendeesExists && nextAttendees is list;
+      let currentAttendees = resource.data.get('attendees', []);
+
+      // Bruk ternary (? :) for å beregne 'diff' KUN hvis 'nextAttendees' er en liste.
+      // Hvis ikke, bruk en tom diff ([].diff([])) for å unngå feil.
+      let diff = isList ? nextAttendees.diff(currentAttendees) : [].diff([]);
+
+      // Returner true KUN hvis det ER en liste OG diff-en matcher betingelsene.
       return isList && (
         (diff.added().size() == 1 && diff.added()[0] == request.auth.uid && diff.removed().size() == 0) ||
         (diff.removed().size() == 1 && diff.removed()[0] == request.auth.uid && diff.added().size() == 0)
@@ -28,17 +35,17 @@ service cloud.firestore {
       allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
 
       allow update: if request.auth != null && (
-        // Allow if user is the owner (Check if this broad permission is intended)
+        // Eieren kan oppdatere
         request.auth.uid == resource.data.userId ||
-        // Allow updates only to 'reactions'
+        // Tillat oppdatering av KUN 'reactions'
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions']) ||
-        // Allow updates only to 'commentCount'
+        // Tillat oppdatering av KUN 'commentCount'
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount']) ||
-        // Allow updates only to 'reactions' and 'commentCount'
+        // Tillat oppdatering av KUN 'reactions' og 'commentCount'
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions', 'commentCount']) ||
-        // Condition 5: Targeted update to 'attendees' by adding/removing self (applies to any user)
+        // Tillat oppdatering av KUN 'attendees' HVIS brukeren legger til/fjerner seg selv
         (
-          request.writeFields.hasOnly(['attendees']) && 
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendees']) &&
           isUpdatingSelfInAttendees()
         )
       );
@@ -50,8 +57,7 @@ service cloud.firestore {
       }
     }
 
-    // Deny all other access - This is a good practice, but it was commented out.
-    // Ensure you uncomment or implement appropriate default denials.
+    // Deny all other access
     // match /{document=**} {
     //   allow read, write: if false;
     // }
