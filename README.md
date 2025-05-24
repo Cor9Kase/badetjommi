@@ -22,6 +22,24 @@ This project uses Firebase for database services but is deployed through [Vercel
 
 Only `firestore.rules` is used for security rules. The file `firebase.rules` is kept for reference and is not deployed.
 
+## Deploying Firestore Rules and Indexes
+
+Use the Firebase CLI to push security rules and indexes to your project.
+
+Deploy both rules and indexes:
+
+```bash
+firebase deploy --only firestore
+```
+
+To deploy just the indexes:
+
+```bash
+firebase deploy --only firestore:indexes
+```
+
+After deployment, new indexes can take a while to build before related queries start working.
+
 ## Leaderboard Caching
 
 The leaderboard data is fetched in real time from Firestore. To provide a quick
