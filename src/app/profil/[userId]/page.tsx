@@ -224,12 +224,13 @@ export default function UserProfilePage() {
                   </CardHeader>
                   <CardContent className="p-4">
                     {bath.type === 'logged' && bath.imageUrl && (
-                      <div className="mb-3 rounded-md overflow-hidden aspect-video relative w-full max-w-xs mx-auto">
+                      <div className="mb-3 max-w-xs mx-auto">
                         <Image
                           src={bath.imageUrl}
                           alt={`Bad fra ${bath.date}`}
-                          fill
-                          className="object-cover"
+                          width={1080}
+                          height={1350}
+                          className="w-full h-auto rounded-md object-contain"
                           data-ai-hint="bilde badelogg"
                         />
                       </div>

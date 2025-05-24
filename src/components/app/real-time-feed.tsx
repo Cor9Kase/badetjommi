@@ -173,7 +173,7 @@ export function RealTimeFeed() {
               </div>
             </CardHeader>
             <CardContent className="p-4 pt-0 sm:p-6 space-y-2">
-              <Skeleton className="aspect-video w-full rounded-md" />
+              <Skeleton className="w-full aspect-[4/5] rounded-md" />
               <Skeleton className="h-4 w-3/4" />
             </CardContent>
           </Card>
@@ -230,15 +230,16 @@ export function RealTimeFeed() {
           </CardHeader>
           <CardContent className="p-4 pt-0 sm:p-6">
             {entry.type === 'logged' && entry.imageUrl && (
-              <div className="mb-4 rounded-lg overflow-hidden aspect-video relative">
+              <div className="mb-4">
                 <Image
                     src={entry.imageUrl}
                     alt={`Bad av ${entry.userName}`}
-                    fill
+                    width={1080}
+                    height={1350}
                     sizes="(max-width: 768px) 100vw, 600px"
                     priority={index === 0}
-                    className="object-cover"
-                    data-ai-hint="naturskjønt vann"
+                    className="w-full h-auto rounded-lg object-contain"
+                    data-ai-hint="naturskj\u00f8nt vann"
                 />
               </div>
             )}
