@@ -45,7 +45,7 @@ service cloud.firestore {
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions', 'commentCount']) ||
         // Tillat oppdatering av KUN 'attendees' HVIS brukeren legger til/fjerner seg selv
         (
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendees']) &&
+          request.writeFields.hasOnly(['attendees']) &&
           isUpdatingSelfInAttendees()
         )
       );
