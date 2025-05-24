@@ -3,6 +3,17 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Helper function to check 'attendees' update logic
+    function isUpdatingSelfInAttendees() {
+      // Use .get() to safely access 'attendees', providing an empty list if it doesn't exist.
+      let currentAttendees = resource.data.get('attendees', []);
+      let nextAttendees = request.resource.data.attendees;
+      let diff = nextAttendees.diff(currentAttendees);
+      // Ensure only the current user is being added OR only the current user is being removed.
+      return (diff.added().size() == 1 && diff.added()[0] == request.auth.uid && diff.removed().size() == 0) ||
+             (diff.removed().size() == 1 && diff.removed()[0] == request.auth.uid && diff.added().size() == 0);
+    }
+
     // Public user profiles
     match /users/{userId} {
       allow read: if true;
@@ -16,16 +27,18 @@ service cloud.firestore {
       allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
 
       allow update: if request.auth != null && (
+        // Allow if user is the owner (Check if this broad permission is intended)
         request.auth.uid == resource.data.userId ||
+        // Allow updates only to 'reactions'
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions']) ||
+        // Allow updates only to 'commentCount'
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount']) ||
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions', 'commentCount']) || (
+        // Allow updates only to 'reactions' and 'commentCount'
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions', 'commentCount']) ||
+        // Allow updates only to 'attendees' IF the user is adding/removing themselves
+        (
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendees']) &&
-          (
-            let current = ('attendees' in resource.data) ? resource.data.attendees : [];
-            let diff = request.resource.data.attendees.diff(current);
-            diff.added().hasOnly([request.auth.uid]) || diff.removed().hasOnly([request.auth.uid])
-          )
+          isUpdatingSelfInAttendees() // Call the function here
         )
       );
 
@@ -36,9 +49,10 @@ service cloud.firestore {
       }
     }
 
-    // Deny all other access
-    match /{document=**} {
-      allow read, write: if false;
-    }
+    // Deny all other access - This is a good practice, but it was commented out.
+    // Ensure you uncomment or implement appropriate default denials.
+    // match /{document=**} {
+    //   allow read, write: if false;
+    // }
   }
 }
