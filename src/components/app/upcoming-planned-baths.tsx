@@ -91,6 +91,14 @@ export function UpcomingPlannedBaths() {
       toast({ variant: "destructive", title: "Logg Inn", description: "Du må være logget inn for å melde deg på." });
       return;
     }
+    const bath = baths.find(b => b.id === bathId);
+    if (bath?.attendees?.includes(currentUser.uid)) {
+      toast({
+        title: "Allerede påmeldt",
+        description: "Du er allerede påmeldt",
+      });
+      return;
+    }
     const bathRef = doc(db, "baths", bathId);
     try {
       await updateDoc(bathRef, {
