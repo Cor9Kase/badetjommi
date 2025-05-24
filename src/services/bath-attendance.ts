@@ -1,5 +1,5 @@
 // Helper functions to join and leave planned baths using Firestore transactions
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import { doc, runTransaction, arrayUnion, arrayRemove } from 'firebase/firestore';
 
 /**
@@ -10,6 +10,9 @@ import { doc, runTransaction, arrayUnion, arrayRemove } from 'firebase/firestore
  * @param uid The uid of the user attending
  */
 export async function joinBath(bathId: string, uid: string): Promise<void> {
+  if (!auth.currentUser || auth.currentUser.uid !== uid) {
+    throw new Error('User must be logged in');
+  }
   const bathRef = doc(db, 'baths', bathId);
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(bathRef);
@@ -33,6 +36,9 @@ export async function joinBath(bathId: string, uid: string): Promise<void> {
  * @param uid The uid of the user to remove
  */
 export async function leaveBath(bathId: string, uid: string): Promise<void> {
+  if (!auth.currentUser || auth.currentUser.uid !== uid) {
+    throw new Error('User must be logged in');
+  }
   const bathRef = doc(db, 'baths', bathId);
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(bathRef);
@@ -48,3 +54,4 @@ export async function leaveBath(bathId: string, uid: string): Promise<void> {
     tx.update(bathRef, { attendees: arrayRemove(uid) });
   });
 }
+
