@@ -76,8 +76,11 @@ export default function ProfilPage() {
       </div>
     );
   }
-  
-  
+  // userProfile should exist here; this check appeases TypeScript.
+  if (!userProfile) {
+    return null;
+  }
+
   return (
     <div className="space-y-8">
       <OnboardingModal isOpen={showOnboardingModal} onOpenChange={setShowOnboardingModal}/>
