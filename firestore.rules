@@ -16,7 +16,10 @@ service cloud.firestore {
       allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
 
       allow update: if request.auth != null && (
-        request.auth.uid == resource.data.userId || (
+        request.auth.uid == resource.data.userId ||
+        request.resource.data.keys().hasOnly(['reactions']) ||
+        request.resource.data.keys().hasOnly(['commentCount']) ||
+        request.resource.data.keys().hasOnly(['reactions', 'commentCount']) || (
           request.resource.data.keys().hasOnly(['attendees']) &&
           (
             (
@@ -36,6 +39,12 @@ service cloud.firestore {
           )
         )
       );
+
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+        allow update, delete: if false;
+      }
     }
 
     // Deny all other access
