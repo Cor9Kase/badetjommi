@@ -14,6 +14,7 @@ import type { BathEntry, PlannedBath } from "@/types/bath";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth, type UserProfile } from "@/contexts/auth-context";
 import { db } from "@/lib/firebase";
+import { useNotifications } from "@/contexts/notification-context";
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDoc, Timestamp, increment } from "firebase/firestore";
 
 import { CommentsDialog } from "./comments-dialog";
@@ -36,6 +37,7 @@ interface AttendeeDetails {
 export function RealTimeFeed() {
   const { toast } = useToast();
   const { currentUser, userProfile, loading: authLoading } = useAuth();
+  const { markFeedSeen } = useNotifications();
   const [feedItems, setFeedItems] = useState<BathEntry[]>([]);
   const [attendeesDetails, setAttendeesDetails] = useState<AttendeeDetails>({});
   const [feedLoading, setFeedLoading] = useState(true);
@@ -84,6 +86,12 @@ export function RealTimeFeed() {
 
     return () => unsubscribe();
   }, [toast]); // Removed attendeesDetails from dependency array to prevent potential infinite loop
+
+  useEffect(() => {
+    if (!feedLoading) {
+      markFeedSeen();
+    }
+  }, [feedLoading, markFeedSeen, feedItems]);
 
   const handleSignUp = async (plannedBathId: string, bathDescription: string) => {
     if (!currentUser) {

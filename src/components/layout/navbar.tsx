@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Home, ClipboardPlus, CalendarPlus, Trophy, User, LogIn } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
+import { useNotifications } from "@/contexts/notification-context";
 
 const navItemsBase = [
   { href: "/", label: "Feed", icon: Home, requiresAuth: false },
@@ -18,6 +19,7 @@ const navItemsBase = [
 export function Navbar() {
   const pathname = usePathname();
   const { currentUser, loading } = useAuth();
+  const { newFeed, newPlanned } = useNotifications();
 
   const getNavItems = () => {
     let items = navItemsBase;
@@ -48,6 +50,9 @@ export function Navbar() {
       <div className="container mx-auto flex justify-around items-center h-16 max-w-md">
         {visibleNavItems.map((item) => {
           const isActive = pathname === item.href || (item.href === "/profil" && pathname.startsWith("/profil/"));
+          const showBadge =
+            (item.href === "/" && newFeed) ||
+            (item.href === "/planlagte-bad" && newPlanned);
           return (
             <Link
               key={item.href}
@@ -58,7 +63,10 @@ export function Navbar() {
               )}
               aria-current={isActive ? "page" : undefined}
             >
-              <item.icon className={cn("h-6 w-6 mb-0.5", isActive ? "stroke-[2.5px]" : "")} />
+              <div className="relative">
+                <item.icon className={cn("h-6 w-6 mb-0.5", isActive ? "stroke-[2.5px]" : "")} />
+                {showBadge && <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-destructive" />}
+              </div>
               <span className={cn("text-xs", isActive ? "font-semibold" : "")}>{item.label}</span>
             </Link>
           );

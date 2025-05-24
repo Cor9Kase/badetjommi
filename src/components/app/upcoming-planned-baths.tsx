@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { useAuth, type UserProfile } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
+import { useNotifications } from "@/contexts/notification-context";
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove, getDoc } from "firebase/firestore";
 import type { BathEntry, PlannedBath } from "@/types/bath";
 import { format } from "date-fns";
@@ -24,6 +25,7 @@ interface AttendeeDetails {
 export function UpcomingPlannedBaths() {
   const { toast } = useToast();
   const { currentUser, loading: authLoading } = useAuth();
+  const { markPlannedSeen } = useNotifications();
   const [baths, setBaths] = useState<PlannedBath[]>([]);
   const [attendeesDetails, setAttendeesDetails] = useState<AttendeeDetails>({});
   const [loadingBaths, setLoadingBaths] = useState(true);
@@ -74,6 +76,12 @@ export function UpcomingPlannedBaths() {
 
     return () => unsubscribe();
   }, [toast]);
+
+  useEffect(() => {
+    if (!loadingBaths) {
+      markPlannedSeen();
+    }
+  }, [loadingBaths, markPlannedSeen, baths]);
 
   const handleSignUp = async (bathId: string, description: string) => {
     if (!currentUser) {
