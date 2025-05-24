@@ -52,11 +52,24 @@ import { db, storage } from "@/lib/firebase";
 import { addDoc, collection, doc, updateDoc, increment, serverTimestamp } from "firebase/firestore";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useRouter } from "next/navigation";
+import { Slider } from "@/components/ui/slider";
 
 
 const temperatureFeelings: WaterTemperatureFeeling[] = ["kaldt", "Passe", "Digg", "Glovarmt"];
-// Ensure there's a default or placeholder value that is not an empty string for the SelectItem
-const EMPTY_SELECT_VALUE = "_EMPTY_";
+
+const feelingEmojis = ["🥶", "🙂", "😎", "🔥"];
+const feelingRangeClasses = [
+  "bg-blue-500",
+  "bg-sky-500",
+  "bg-orange-500",
+  "bg-red-600",
+];
+const feelingThumbClasses = [
+  "border-blue-500",
+  "border-sky-500",
+  "border-orange-500",
+  "border-red-600",
+];
 
 
 const bathLoggingSchema = z.object({
@@ -374,30 +387,34 @@ export function BathLoggingForm() {
         <FormField
           control={form.control}
           name="waterTemperature"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="flex items-center">
-                <Thermometer className="mr-2 h-4 w-4" /> Temperaturfølelse (Valgfritt)
-              </FormLabel>
-              <Select 
-                onValueChange={(value) => field.onChange(value === EMPTY_SELECT_VALUE ? null : value)} 
-                value={field.value ?? EMPTY_SELECT_VALUE}
-              >
+          render={({ field }) => {
+            const currentIndex = field.value ? temperatureFeelings.indexOf(field.value) : 0
+            return (
+              <FormItem>
+                <FormLabel className="flex items-center">
+                  <Thermometer className="mr-2 h-4 w-4" /> Temperaturfølelse (Valgfritt)
+                </FormLabel>
                 <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Hvordan føltes vannet?" />
-                  </SelectTrigger>
+                  <div className="flex items-center space-x-3">
+                    <Slider
+                      min={0}
+                      max={3}
+                      step={1}
+                      value={[currentIndex]}
+                      onValueChange={(val) => field.onChange(temperatureFeelings[val[0]])}
+                      trackClassName="bg-muted"
+                      rangeClassName={feelingRangeClasses[currentIndex]}
+                      thumbClassName={feelingThumbClasses[currentIndex]}
+                    />
+                    <span className="text-xl">
+                      {feelingEmojis[currentIndex]}
+                    </span>
+                  </div>
                 </FormControl>
-                <SelectContent>
-                  <SelectItem value={EMPTY_SELECT_VALUE}>Velg følelse (eller la stå)</SelectItem>
-                  {temperatureFeelings.map((feeling) => (
-                     <SelectItem key={feeling} value={feeling}>{feeling.charAt(0).toUpperCase() + feeling.slice(1)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
+                <FormMessage />
+              </FormItem>
+            )
+          }}
         />
 
         <FormField
