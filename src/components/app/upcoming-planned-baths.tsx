@@ -9,36 +9,30 @@ import { CalendarCheck, Users, UserMinus, UserPlus, Info, Waves } from "lucide-r
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useAuth, type UserProfile } from "@/contexts/auth-context";
+import { useAuth } from "@/contexts/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { useNotifications } from "@/contexts/notification-context";
-import { collection, query, orderBy, onSnapshot, getDocs, where, documentId } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { joinBath, leaveBath } from "@/services/bath-attendance";
 import type { BathEntry, PlannedBath } from "@/types/bath";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 import { Timestamp } from "firebase/firestore";
 
-interface AttendeeDetails {
-  [uid: string]: Pick<UserProfile, "name" | "avatarUrl">;
-}
-
 export function UpcomingPlannedBaths() {
   const { toast } = useToast();
   const { currentUser, loading: authLoading } = useAuth();
   const { markPlannedSeen } = useNotifications();
   const [baths, setBaths] = useState<PlannedBath[]>([]);
-  const [attendeesDetails, setAttendeesDetails] = useState<AttendeeDetails>({});
   const [loadingBaths, setLoadingBaths] = useState(true);
 
   useEffect(() => {
     setLoadingBaths(true);
     const bathsRef = collection(db, "baths");
     const q = query(bathsRef, orderBy("createdAt", "desc"));
-    const unsubscribe = onSnapshot(q, async (snapshot) => {
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       const planned: PlannedBath[] = [];
-      const attendeeIdsToFetch = new Set<string>();
 
       snapshot.forEach((docSnap) => {
         const data = docSnap.data() as BathEntry;
@@ -47,7 +41,6 @@ export function UpcomingPlannedBaths() {
           const bathDateTime = new Date(`${bath.date}T${bath.time}`);
           if (bathDateTime >= new Date()) {
             planned.push(bath);
-            bath.attendees?.forEach((uid) => attendeeIdsToFetch.add(uid));
           }
         }
       });
@@ -55,22 +48,6 @@ export function UpcomingPlannedBaths() {
       planned.sort((a, b) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime());
       setBaths(planned);
 
-      if (attendeeIdsToFetch.size > 0) {
-        const idsToQuery = Array.from(attendeeIdsToFetch).filter((uid) => !attendeesDetails[uid]);
-        const newDetails: AttendeeDetails = {};
-        for (let i = 0; i < idsToQuery.length; i += 10) {
-          const chunk = idsToQuery.slice(i, i + 10);
-          const userQuery = query(collection(db, "users"), where(documentId(), "in", chunk));
-          const usersSnap = await getDocs(userQuery);
-          usersSnap.forEach((userSnap) => {
-            const userData = userSnap.data() as UserProfile;
-            newDetails[userSnap.id] = { name: userData.name, avatarUrl: userData.avatarUrl };
-          });
-        }
-        if (Object.keys(newDetails).length > 0) {
-          setAttendeesDetails((prev) => ({ ...prev, ...newDetails }));
-        }
-      }
       setLoadingBaths(false);
     }, (error) => {
       console.error("Error fetching planned baths: ", error);
@@ -93,7 +70,7 @@ export function UpcomingPlannedBaths() {
       return;
     }
     const bath = baths.find(b => b.id === bathId);
-    if (bath?.attendees?.includes(currentUser.uid)) {
+    if (bath?.attendees?.includes(currentUser.displayName || '')) {
       toast({
         title: "Allerede påmeldt",
         description: "Du er allerede påmeldt",
@@ -101,7 +78,7 @@ export function UpcomingPlannedBaths() {
       return;
     }
     try {
-      await joinBath(bathId, currentUser.uid);
+      await joinBath(bathId, currentUser.displayName || '');
       toast({ title: "Påmeldt!", description: `Du er nå påmeldt \"${description}\".` });
     } catch (error) {
       console.error("Error signing up: ", error);
@@ -115,7 +92,7 @@ export function UpcomingPlannedBaths() {
       return;
     }
     const bath = baths.find(b => b.id === bathId);
-    if (!bath?.attendees?.includes(currentUser.uid)) {
+    if (!bath?.attendees?.includes(currentUser.displayName || '')) {
       toast({
         variant: "destructive",
         title: "Ikke påmeldt",
@@ -125,7 +102,7 @@ export function UpcomingPlannedBaths() {
     }
 
     try {
-      await leaveBath(bathId, currentUser.uid);
+      await leaveBath(bathId, currentUser.displayName || '');
       toast({ title: "Avmeldt!", description: `Du er nå avmeldt \"${description}\".` });
     } catch (error) {
       console.error("Error signing off: ", error);
@@ -194,7 +171,7 @@ export function UpcomingPlannedBaths() {
             <p className="text-sm text-muted-foreground">{formatDateForDisplay(bath.date)} kl. {bath.time}</p>
             <p className="text-sm text-muted-foreground">Antall påmeldte: {bath.attendees ? bath.attendees.length : 0}</p>
             {bath.attendees && bath.attendees.length > 0 && (
-              <p className="text-sm text-muted-foreground">Deltakere: {bath.attendees.map(uid => attendeesDetails[uid]?.name || 'Laster...').join(', ')}</p>
+              <p className="text-sm text-muted-foreground">Deltakere: {bath.attendees.join(', ')}</p>
             )}
           </CardContent>
           <Separator />
@@ -207,7 +184,7 @@ export function UpcomingPlannedBaths() {
               <Button size="sm" variant="outline" disabled>
                 <Info className="h-4 w-4 mr-2" /> Du arrangerer
               </Button>
-            ) : currentUser && bath.attendees && bath.attendees.includes(currentUser.uid) ? (
+            ) : currentUser && bath.attendees && bath.attendees.includes(currentUser.displayName || '') ? (
               <Button size="sm" variant="outline" onClick={() => handleSignOff(bath.id, bath.description)}>
                 <UserMinus className="h-4 w-4 mr-2" /> Meld deg av
               </Button>

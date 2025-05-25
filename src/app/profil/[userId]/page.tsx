@@ -13,7 +13,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth, type UserProfile } from "@/contexts/auth-context";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, getDocs, collection, query, where, orderBy, onSnapshot, Timestamp, documentId } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, orderBy, onSnapshot, Timestamp } from "firebase/firestore";
 import { joinBath, leaveBath } from "@/services/bath-attendance";
 import { format as formatDateFns } from "date-fns";
 import { nb } from "date-fns/locale";
@@ -29,7 +29,6 @@ export default function UserProfilePage() {
 
   const [user, setUser] = useState<UserProfile | null>(null);
   const [bathLog, setBathLog] = useState<BathEntry[]>([]);
-  const [attendeesDetails, setAttendeesDetails] = useState<Record<string, Pick<UserProfile, 'name' | 'avatarUrl'>>>({});
   const [profileLoading, setProfileLoading] = useState(true);
   const [logLoading, setLogLoading] = useState(true);
 
@@ -57,36 +56,15 @@ export default function UserProfilePage() {
       const bathsCollectionRef = collection(db, "baths");
       const q = query(bathsCollectionRef, where("userId", "==", userId), orderBy("createdAt", "desc"));
       
-      const unsubscribe = onSnapshot(q, async (snapshot) => {
+      const unsubscribe = onSnapshot(q, (snapshot) => {
         const logEntries: BathEntry[] = [];
-        const attendeeIdsToFetch = new Set<string>();
 
         snapshot.forEach(doc => {
           const data = doc.data() as BathEntry;
           logEntries.push({ ...data, id: doc.id });
-           if (data.type === 'planned') {
-            data.attendees?.forEach(uid => attendeeIdsToFetch.add(uid));
-          }
-        });
+           // attendees are stored as plain names
+         });
         setBathLog(logEntries);
-
-        // Fetch details for attendees
-        if (attendeeIdsToFetch.size > 0) {
-            const idsToQuery = Array.from(attendeeIdsToFetch).filter(uid => !attendeesDetails[uid]);
-            const newAttendeesDetails: Record<string, Pick<UserProfile, 'name' | 'avatarUrl'>> = {};
-            for (let i = 0; i < idsToQuery.length; i += 10) {
-                const chunk = idsToQuery.slice(i, i + 10);
-                const usersQ = query(collection(db, "users"), where(documentId(), "in", chunk));
-                const usersSnap = await getDocs(usersQ);
-                usersSnap.forEach(userSnap => {
-                    const userData = userSnap.data() as UserProfile;
-                    newAttendeesDetails[userSnap.id] = { name: userData.name, avatarUrl: userData.avatarUrl };
-                });
-            }
-            if (Object.keys(newAttendeesDetails).length > 0) {
-                setAttendeesDetails(prev => ({ ...prev, ...newAttendeesDetails }));
-            }
-        }
         setLogLoading(false);
       }, (error) => {
         console.error("Error fetching bath log:", error);
@@ -106,7 +84,7 @@ export default function UserProfilePage() {
     const bath = bathLog.find(
       (b): b is PlannedBath => b.id === bathId && b.type === "planned"
     );
-    if (bath?.attendees?.includes(loggedInUser.uid)) {
+    if (bath?.attendees?.includes(loggedInUserProfile?.name || '')) {
         toast({
             title: "Allerede påmeldt",
             description: "Du er allerede påmeldt",
@@ -114,12 +92,7 @@ export default function UserProfilePage() {
         return;
     }
     try {
-        await joinBath(bathId, loggedInUser.uid);
-        // Optimistically update local state for attendees if needed, or rely on snapshot listener
-        setAttendeesDetails(prev => ({
-            ...prev,
-            [loggedInUser.uid]: { name: loggedInUserProfile?.name || "Deg", avatarUrl: loggedInUserProfile?.avatarUrl }
-        }));
+        await joinBath(bathId, loggedInUserProfile?.name || '');
         toast({
             title: "Påmeldt!",
             description: `Du er nå påmeldt "${bathDescription}".`,
@@ -140,7 +113,7 @@ export default function UserProfilePage() {
     const bath = bathLog.find(
       (b): b is PlannedBath => b.id === bathId && b.type === "planned"
     );
-    if (!bath?.attendees?.includes(loggedInUser.uid)) {
+    if (!bath?.attendees?.includes(loggedInUserProfile?.name || '')) {
       toast({
         variant: "destructive",
         title: "Ikke påmeldt",
@@ -150,7 +123,7 @@ export default function UserProfilePage() {
     }
 
     try {
-      await leaveBath(bathId, loggedInUser.uid);
+      await leaveBath(bathId, loggedInUserProfile?.name || '');
       toast({
         title: "Avmeldt!",
         description: `Du er nå avmeldt "${bathDescription}".`,
@@ -281,13 +254,13 @@ export default function UserProfilePage() {
                           <Users className="h-4 w-4 mr-2 text-muted-foreground" />
                           <span>{bath.attendees ? bath.attendees.length : 0} påmeldt.</span>
                         </div>
-                        {bath.attendees && bath.attendees.length > 0 && <p className="text-muted-foreground">Deltakere: {bath.attendees.map(uid => attendeesDetails[uid]?.name || '...').join(', ')}</p>}
+                        {bath.attendees && bath.attendees.length > 0 && <p className="text-muted-foreground">Deltakere: {bath.attendees.join(', ')}</p>}
 
                         {loggedInUser && loggedInUser.uid === bath.userId ? (
                            <Button size="sm" variant="outline" className="mt-2 w-full sm:w-auto" disabled>
                              <Info className="mr-2 h-4 w-4" /> Du arrangerer
                            </Button>
-                        ) : loggedInUser && bath.attendees && bath.attendees.includes(loggedInUser.uid) ? (
+                        ) : loggedInUser && bath.attendees && bath.attendees.includes(loggedInUserProfile?.name || '') ? (
                            <Button 
                              size="sm" 
                              variant="outline" 

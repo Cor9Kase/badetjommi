@@ -13,10 +13,10 @@ import type { FC } from "react";
 import { useState, useEffect } from "react";
 import type { BathEntry, PlannedBath } from "@/types/bath"; 
 import { useToast } from "@/hooks/use-toast";
-import { useAuth, type UserProfile } from "@/contexts/auth-context";
+import { useAuth } from "@/contexts/auth-context";
 import { db } from "@/lib/firebase";
 import { useNotifications } from "@/contexts/notification-context";
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, getDoc, Timestamp, increment } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, Timestamp, increment } from "firebase/firestore";
 import { joinBath, leaveBath } from "@/services/bath-attendance";
 
 import { CommentsDialog } from "./comments-dialog";
@@ -32,16 +32,11 @@ const ReactionButton: FC<{ icon: React.ElementType, count: number, label: string
   </Button>
 );
 
-interface AttendeeDetails {
-  [uid: string]: Pick<UserProfile, 'name' | 'avatarUrl'>;
-}
-
 export function RealTimeFeed() {
   const { toast } = useToast();
   const { currentUser, userProfile, loading: authLoading } = useAuth();
   const { markFeedSeen } = useNotifications();
   const [feedItems, setFeedItems] = useState<BathEntry[]>([]);
-  const [attendeesDetails, setAttendeesDetails] = useState<AttendeeDetails>({});
   const [feedLoading, setFeedLoading] = useState(true);
   const [openCommentsId, setOpenCommentsId] = useState<string | null>(null);
 
@@ -50,35 +45,16 @@ export function RealTimeFeed() {
     const bathsCollectionRef = collection(db, "baths");
     const q = query(bathsCollectionRef, orderBy("createdAt", "desc"));
 
-    const unsubscribe = onSnapshot(q, async (querySnapshot) => {
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const items: BathEntry[] = [];
-      const attendeeIdsToFetch = new Set<string>();
 
       querySnapshot.forEach((doc) => {
         const data = doc.data() as BathEntry;
         items.push({ ...data, id: doc.id });
-        if (data.type === 'planned') {
-            data.attendees?.forEach(uid => attendeeIdsToFetch.add(uid));
-        }
+        // attendees are stored as plain names
       });
 
       setFeedItems(items);
-      
-      // Fetch details for attendees if there are any new ones
-      if (attendeeIdsToFetch.size > 0) {
-        const newAttendeesDetails: AttendeeDetails = {};
-        for (const uid of Array.from(attendeeIdsToFetch)) {
-            if (!attendeesDetails[uid]) { // Only fetch if not already fetched
-                const userDocRef = doc(db, "users", uid);
-                const userSnap = await getDoc(userDocRef);
-                if (userSnap.exists()) {
-                    const userData = userSnap.data() as UserProfile;
-                    newAttendeesDetails[uid] = { name: userData.name, avatarUrl: userData.avatarUrl };
-                }
-            }
-        }
-        setAttendeesDetails(prev => ({ ...prev, ...newAttendeesDetails }));
-      }
       setFeedLoading(false);
     }, (error) => {
       console.error("Error fetching feed items: ", error);
@@ -87,7 +63,7 @@ export function RealTimeFeed() {
     });
 
     return () => unsubscribe();
-  }, [toast]); // Removed attendeesDetails from dependency array to prevent potential infinite loop
+  }, [toast]);
 
   useEffect(() => {
     if (!feedLoading) {
@@ -103,7 +79,7 @@ export function RealTimeFeed() {
     const bath = feedItems.find(
       (b): b is PlannedBath => b.id === plannedBathId && b.type === "planned"
     );
-    if (bath?.attendees?.includes(currentUser.uid)) {
+    if (bath?.attendees?.includes(userProfile?.name || '')) {
       toast({
         title: "Allerede påmeldt",
         description: "Du er allerede påmeldt",
@@ -111,9 +87,8 @@ export function RealTimeFeed() {
       return;
     }
     try {
-      await joinBath(plannedBathId, currentUser.uid);
-      // Optimistically update local state (attendeesDetails will eventually catch up via snapshot)
-      // No need to directly setAttendeesDetails here as the onSnapshot listener will handle it
+      await joinBath(plannedBathId, userProfile?.name || '');
+      // State updates via the onSnapshot listener
       toast({
         title: "Påmeldt!",
         description: `Du er nå påmeldt "${bathDescription}".`,
@@ -133,7 +108,7 @@ export function RealTimeFeed() {
     const bath = feedItems.find(
       (b): b is PlannedBath => b.id === plannedBathId && b.type === "planned"
     );
-    if (!bath?.attendees?.includes(currentUser.uid)) {
+    if (!bath?.attendees?.includes(userProfile?.name || '')) {
       toast({
         variant: "destructive",
         title: "Ikke påmeldt",
@@ -143,7 +118,7 @@ export function RealTimeFeed() {
     }
 
     try {
-      await leaveBath(plannedBathId, currentUser.uid);
+      await leaveBath(plannedBathId, userProfile?.name || '');
       toast({
         title: "Avmeldt!",
         description: `Du er nå avmeldt "${bathDescription}".`,
@@ -279,7 +254,7 @@ export function RealTimeFeed() {
                 <p className="text-sm text-muted-foreground">Antall påmeldte: {entry.attendees ? entry.attendees.length : 0}</p>
                 {entry.attendees && entry.attendees.length > 0 && (
                   <p className="text-sm text-muted-foreground">
-                    Deltakere: {entry.attendees.map(uid => attendeesDetails[uid]?.name || 'Laster...').join(', ')}
+                    Deltakere: {entry.attendees.join(', ')}
                   </p>
                 )}
               </div>
@@ -337,7 +312,7 @@ export function RealTimeFeed() {
                    <Button size="sm" variant="outline" disabled>
                      <Info className="h-4 w-4 mr-2" /> Du arrangerer
                    </Button>
-                ) : currentUser && entry.attendees && entry.attendees.includes(currentUser.uid) ? (
+                ) : currentUser && entry.attendees && entry.attendees.includes(userProfile?.name || '') ? (
                   <Button
                     size="sm"
                     variant="outline"
