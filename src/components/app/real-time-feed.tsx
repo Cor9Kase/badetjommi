@@ -17,7 +17,6 @@ import { useAuth } from "@/contexts/auth-context";
 import { db } from "@/lib/firebase";
 import { useNotifications } from "@/contexts/notification-context";
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, Timestamp, increment } from "firebase/firestore";
-import { joinBath, leaveBath } from "@/services/bath-attendance";
 
 import { CommentsDialog } from "./comments-dialog";
 import { format } from "date-fns";
@@ -69,69 +68,6 @@ export function RealTimeFeed() {
       markFeedSeen();
     }
   }, [feedLoading, markFeedSeen, feedItems]);
-
-  const handleSignUp = async (plannedBathId: string, bathDescription: string) => {
-    if (!currentUser) {
-      toast({ variant: "destructive", title: "Logg Inn", description: "Du må være logget inn for å melde deg på." });
-      return;
-    }
-    const bath = feedItems.find(
-      (b): b is PlannedBath => b.id === plannedBathId && b.type === "planned"
-    );
-    if (bath?.attendees?.includes(userProfile?.name || '')) {
-      toast({
-        title: "Allerede påmeldt",
-        description: "Du er allerede påmeldt",
-      });
-      return;
-    }
-    if (!userProfile) {
-      toast({ variant: "destructive", title: "Logg Inn", description: "Du må være logget inn." });
-      return;
-    }
-    try {
-      await joinBath(plannedBathId, userProfile?.name || '');
-      // State updates via the onSnapshot listener
-      toast({
-        title: "Påmeldt!",
-        description: `Du er nå påmeldt "${bathDescription}".`,
-        variant: "default",
-      });
-    } catch (error) {
-      console.error("Error signing up for bath: ", error);
-      toast({ variant: "destructive", title: "Feil", description: "Kunne ikke melde deg på." });
-    }
-  };
-
-  const handleSignOff = async (plannedBathId: string, bathDescription: string) => {
-    if (!currentUser || !userProfile) {
-      toast({ variant: "destructive", title: "Logg Inn", description: "Du må være logget inn." });
-      return;
-    }
-    const bath = feedItems.find(
-      (b): b is PlannedBath => b.id === plannedBathId && b.type === "planned"
-    );
-    if (!bath?.attendees?.includes(userProfile?.name || '')) {
-      toast({
-        variant: "destructive",
-        title: "Ikke påmeldt",
-        description: "Du er ikke registrert for dette badet.",
-      });
-      return;
-    }
-
-    try {
-      await leaveBath(plannedBathId, userProfile?.name || '');
-      toast({
-        title: "Avmeldt!",
-        description: `Du er nå avmeldt "${bathDescription}".`,
-        variant: "default",
-      });
-    } catch (error) {
-      console.error("Error signing off from bath: ", error);
-      toast({ variant: "destructive", title: "Feil", description: "Kunne ikke melde deg av." });
-    }
-  };
 
   const handleReaction = async (
     bathId: string,
@@ -254,19 +190,15 @@ export function RealTimeFeed() {
               <div className="space-y-2">
                 <h3 className="font-semibold text-lg flex items-center"><CalendarCheck className="h-5 w-5 mr-2 text-primary" /> {entry.description}</h3>
                 {entry.location && <p className="text-sm text-muted-foreground">Sted: {entry.location}</p>}
-                <p className="text-sm text-muted-foreground">Antall påmeldte: {entry.attendees ? entry.attendees.length : 0}</p>
-                {entry.attendees && entry.attendees.length > 0 && (
-                  <p className="text-sm text-muted-foreground">
-                    Deltakere: {entry.attendees.join(', ')}
-                  </p>
-                )}
+                {/* Attendee count and list removed */}
               </div>
             )}
           </CardContent>
-          <Separator />
-          <CardFooter className="p-2 flex justify-between items-center bg-secondary/30">
-            {entry.type === 'logged' ? (
-              <>
+          {/* Separator and CardFooter are conditional based on entry type */}
+          {entry.type === 'logged' && (
+            <>
+              <Separator />
+              <CardFooter className="p-2 flex justify-between items-center bg-secondary/30">
                 <div className="flex items-center space-x-1">
                   <ReactionButton
                     icon={ThumbsUp}
@@ -304,37 +236,10 @@ export function RealTimeFeed() {
                   open={openCommentsId === entry.id}
                   onOpenChange={(open) => !open && setOpenCommentsId(null)}
                 />
-              </>
-            ) : ( // Planned bath
-              <div className="flex w-full justify-between items-center">
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <Users className="h-4 w-4 mr-2" />
-                  <span>{entry.attendees ? entry.attendees.length : 0} påmeldt</span>
-                </div>
-                {currentUser && entry.userId === currentUser.uid ? (
-                   <Button size="sm" variant="outline" disabled>
-                     <Info className="h-4 w-4 mr-2" /> Du arrangerer
-                   </Button>
-                ) : currentUser && entry.attendees && entry.attendees.includes(userProfile?.name || '') ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleSignOff(entry.id, entry.description)}
-                  >
-                    <UserMinus className="h-4 w-4 mr-2" /> Meld deg av
-                  </Button>
-                ) : (
-                  <Button 
-                    size="sm" 
-                    onClick={() => handleSignUp(entry.id, entry.description)}
-                    disabled={!currentUser} // Disable if no user logged in
-                  >
-                    <UserPlus className="h-4 w-4 mr-2" /> Meld deg på
-                  </Button>
-                )}
-              </div>
-            )}
-          </CardFooter>
+              </CardFooter>
+            </>
+          )}
+          {/* For planned baths, the CardFooter is now removed, so no specific content here */}
         </Card>
       ))}
     </div>
