@@ -3,26 +3,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to ensure only a single name is added or removed in
-    // the attendees array. We no longer store UIDs here, only plain names.
-    function isUpdatingSingleNameInAttendees() {
-      // Definer variabler med 'let' øverst i funksjonen.
-      let attendeesExists = 'attendees' in request.resource.data;
-      let nextAttendees = request.resource.data.get('attendees', null); // Bruk .get for sikkerhet
-      let isList = attendeesExists && nextAttendees is list;
-      let currentAttendees = resource.data.get('attendees', []);
-
-      // Bruk ternary (? :) for å beregne 'diff' KUN hvis 'nextAttendees' er en liste.
-      // Hvis ikke, bruk en tom diff ([].diff([])) for å unngå feil.
-      let diff = isList ? nextAttendees.diff(currentAttendees) : [].diff([]);
-
-      // Return true only if exactly one string is added or removed.
-      return isList && (
-        (diff.added().size() == 1 && diff.removed().size() == 0 && diff.added()[0] is string) ||
-        (diff.removed().size() == 1 && diff.added().size() == 0 && diff.removed()[0] is string)
-      );
-    }
-
     // Public user profiles
     match /users/{userId} {
       allow read: if true;
@@ -43,19 +23,33 @@ service cloud.firestore {
         // Tillat oppdatering av KUN 'commentCount'
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount']) ||
         // Tillat oppdatering av KUN 'reactions' og 'commentCount'
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions', 'commentCount']) ||
-        // Allow updating only 'attendees' with one name added or removed
-        (
-          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendees']) ||
-          (request.resource.data.diff(resource.data).affectedKeys().size() == 0 && 'attendees' in request.resource.data)) &&
-          isUpdatingSingleNameInAttendees()
-        )
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions', 'commentCount'])
       );
 
       match /comments/{commentId} {
         allow read: if true;
         allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
         allow update, delete: if false;
+      }
+
+      // Rules for the new bath signups subcollection
+      match /signups/{userId} {
+        // Allow users to create their own signup document.
+        // The document ID must be their own UID.
+        // The document should store their userId.
+        allow create: if request.auth != null && request.auth.uid == userId &&
+                         request.resource.data.userId == request.auth.uid;
+
+        // Allow anyone to read who has signed up (public read).
+        allow read: if true;
+
+        // Allow users to delete their own signup document.
+        // The document ID must be their own UID.
+        allow delete: if request.auth != null && request.auth.uid == userId;
+
+        // Prevent updates to signup documents for now,
+        // as signups are simple (create/delete).
+        allow update: if false;
       }
     }
 
