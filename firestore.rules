@@ -3,8 +3,8 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check 'attendees' update logic
-    function isUpdatingSelfInAttendees() {
+    // Helper function to ensure only one attendee name is added or removed
+    function isUpdatingAttendees() {
       // Definer variabler med 'let' øverst i funksjonen.
       let attendeesExists = 'attendees' in request.resource.data;
       let nextAttendees = request.resource.data.get('attendees', null); // Bruk .get for sikkerhet
@@ -15,10 +15,10 @@ service cloud.firestore {
       // Hvis ikke, bruk en tom diff ([].diff([])) for å unngå feil.
       let diff = isList ? nextAttendees.diff(currentAttendees) : [].diff([]);
 
-      // Returner true KUN hvis det ER en liste OG diff-en matcher betingelsene.
+      // Return true if exactly one name is added or removed
       return isList && (
-        (diff.added().size() == 1 && diff.added()[0] == request.auth.uid && diff.removed().size() == 0) ||
-        (diff.removed().size() == 1 && diff.removed()[0] == request.auth.uid && diff.added().size() == 0)
+        (diff.added().size() == 1 && diff.removed().size() == 0) ||
+        (diff.removed().size() == 1 && diff.added().size() == 0)
       );
     }
 
@@ -43,11 +43,11 @@ service cloud.firestore {
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount']) ||
         // Tillat oppdatering av KUN 'reactions' og 'commentCount'
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions', 'commentCount']) ||
-        // Tillat oppdatering av KUN 'attendees' HVIS brukeren legger til/fjerner seg selv
+        // Allow updating only 'attendees' with one name added or removed
         (
           (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendees']) ||
           (request.resource.data.diff(resource.data).affectedKeys().size() == 0 && 'attendees' in request.resource.data)) &&
-          isUpdatingSelfInAttendees()
+          isUpdatingAttendees()
         )
       );
 
