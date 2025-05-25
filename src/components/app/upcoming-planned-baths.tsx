@@ -47,7 +47,6 @@ export function UpcomingPlannedBaths() {
 
       planned.sort((a, b) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime());
       setBaths(planned);
-
       setLoadingBaths(false);
     }, (error) => {
       console.error("Error fetching planned baths: ", error);
@@ -65,7 +64,7 @@ export function UpcomingPlannedBaths() {
   }, [loadingBaths, markPlannedSeen, baths]);
 
   const handleSignUp = async (bathId: string, description: string) => {
-    if (!currentUser) {
+    if (!currentUser || !currentUser.displayName) {
       toast({ variant: "destructive", title: "Logg Inn", description: "Du må være logget inn for å melde deg på." });
       return;
     }
@@ -87,7 +86,7 @@ export function UpcomingPlannedBaths() {
   };
 
   const handleSignOff = async (bathId: string, description: string) => {
-    if (!currentUser) {
+    if (!currentUser || !currentUser.displayName) {
       toast({ variant: "destructive", title: "Logg Inn", description: "Du må være logget inn." });
       return;
     }

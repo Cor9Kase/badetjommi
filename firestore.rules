@@ -44,7 +44,7 @@ service cloud.firestore {
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentCount']) ||
         // Tillat oppdatering av KUN 'reactions' og 'commentCount'
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions', 'commentCount']) ||
-        // Tillat oppdatering av KUN 'attendees' HVIS brukeren legger til/fjerner seg selv
+        // Allow updating only 'attendees' with one name added or removed
         (
           (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendees']) ||
           (request.resource.data.diff(resource.data).affectedKeys().size() == 0 && 'attendees' in request.resource.data)) &&

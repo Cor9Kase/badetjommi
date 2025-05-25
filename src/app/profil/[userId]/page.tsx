@@ -104,7 +104,7 @@ export default function UserProfilePage() {
   };
 
   const handleSignOffFromPlannedBath = async (bathId: string, bathDescription: string) => {
-    if (!loggedInUser) {
+    if (!loggedInUser || !loggedInUserProfile) {
       toast({ variant: "destructive", title: "Logg Inn", description: "Du må være logget inn." });
       return;
     }

@@ -53,7 +53,6 @@ export function RealTimeFeed() {
         items.push({ ...data, id: doc.id });
         // attendees are stored as plain names
       });
-
       setFeedItems(items);
       setFeedLoading(false);
     }, (error) => {
@@ -86,6 +85,10 @@ export function RealTimeFeed() {
       });
       return;
     }
+    if (!userProfile) {
+      toast({ variant: "destructive", title: "Logg Inn", description: "Du må være logget inn." });
+      return;
+    }
     try {
       await joinBath(plannedBathId, userProfile?.name || '');
       // State updates via the onSnapshot listener
@@ -101,7 +104,7 @@ export function RealTimeFeed() {
   };
 
   const handleSignOff = async (plannedBathId: string, bathDescription: string) => {
-    if (!currentUser) {
+    if (!currentUser || !userProfile) {
       toast({ variant: "destructive", title: "Logg Inn", description: "Du må være logget inn." });
       return;
     }
