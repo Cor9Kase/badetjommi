@@ -177,6 +177,9 @@ export default function UserProfilePage() {
             </Avatar>
             <CardTitle className="text-3xl font-bold">{user.name}</CardTitle>
             {user.bio && <CardDescription className="mt-1 text-md">{user.bio}</CardDescription>}
+            {user.rankTitle && (
+              <p className="text-xl text-center text-primary font-semibold mt-2">{user.rankTitle}</p>
+            )}
           </div>
         </CardHeader>
         <CardContent>

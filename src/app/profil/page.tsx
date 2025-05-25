@@ -87,6 +87,9 @@ export default function ProfilPage() {
             <UserCircle2 className="mr-3 h-8 w-8 text-primary" />
             Min Profil
           </CardTitle>
+          {userProfile && userProfile.rankTitle && (
+            <p className="text-lg text-muted-foreground text-center mt-2">{userProfile.rankTitle}</p>
+          )}
         </CardHeader>
         <CardContent>
           <ProfileForm />

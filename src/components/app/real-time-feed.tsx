@@ -261,6 +261,11 @@ export function RealTimeFeed() {
                       {formatDateForDisplay(entry.date)} kl. {entry.time}
                       {entry.location && ` @ ${entry.location}`}
                     </CardDescription>
+                    {entry.type === 'logged' && entry.userRankTitle && (
+                      <CardDescription className="text-xs text-accent mt-1">
+                        {entry.userRankTitle}
+                      </CardDescription>
+                    )}
                   </div>
                 </a>
               </Link>

@@ -53,6 +53,7 @@ import { addDoc, collection, doc, updateDoc, increment, serverTimestamp } from "
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { useRouter } from "next/navigation";
 import { Slider } from "@/components/ui/slider";
+import { calculateRankTitle } from "@/lib/rank-utils";
 
 
 const temperatureFeelings: WaterTemperatureFeeling[] = ["kaldt", "Passe", "Digg", "Glovarmt"];
@@ -202,6 +203,7 @@ export function BathLoggingForm() {
         userId: currentUser.uid,
         userName: userProfile.name,
         userAvatar: userProfile.avatarUrl || "",
+        userRankTitle: userProfile.rankTitle, // Added this line
         date: format(data.date, "yyyy-MM-dd"),
         time: data.time,
         location: data.location || "",
@@ -218,10 +220,15 @@ export function BathLoggingForm() {
         await addDoc(collection(db, "baths"), bathData);
         
         const userDocRef = doc(db, "users", currentUser.uid);
+        // Calculate the new rank title based on the upcoming bath count
+        const newCurrentBaths = userProfile.currentBaths + 1;
+        const newRankTitle = calculateRankTitle(newCurrentBaths);
+
         await updateDoc(userDocRef, {
-            currentBaths: increment(1)
+            currentBaths: increment(1),
+            rankTitle: newRankTitle // Add this line
         });
-        await fetchUserProfile(currentUser.uid);
+        await fetchUserProfile(currentUser.uid); // This will now fetch the profile with the updated rankTitle
 
 
         toast({

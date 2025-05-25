@@ -9,6 +9,7 @@ import { auth, db } from '@/lib/firebase';
 import type { DocumentData } from 'firebase/firestore';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { calculateRankTitle } from '@/lib/rank-utils';
 
 // Define a shape for your user profile data stored in Firestore
 export interface UserProfile {
@@ -20,6 +21,7 @@ export interface UserProfile {
   avatarUrl?: string;
   targetBaths: number;
   currentBaths: number;
+  rankTitle?: string; // Added this line
 }
 
 interface AuthContextType {
@@ -118,6 +120,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         avatarUrl: "",
         targetBaths: targetBaths,
         currentBaths: 0,
+        rankTitle: calculateRankTitle(0), // <-- ADD THIS LINE
     };
     try {
         await setDoc(doc(db, "users", user.uid), newUserProfile);

@@ -28,6 +28,7 @@ export interface LoggedBath extends BathBase {
   };
   commentCount: number; // Denormalized count, comments could be a subcollection
   waterTemperature?: WaterTemperatureFeeling | null;
+  userRankTitle?: string; // User's rank title at the time of logging the bath
 }
 
 export interface PlannedBath extends BathBase {
