@@ -11,7 +11,7 @@ import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import type { FC } from "react";
 import { useState, useEffect } from "react";
-import type { BathEntry, PlannedBath } from "@/types/bath"; 
+import type { BathEntry } from "@/types/bath";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { db } from "@/lib/firebase";
@@ -33,41 +33,68 @@ const ReactionButton: FC<{ icon: React.ElementType, count: number, label: string
 
 export function RealTimeFeed() {
   const { toast } = useToast();
-  const { currentUser, userProfile, loading: authLoading } = useAuth();
+  const { currentUser, loading: authLoading } = useAuth();
   const { markFeedSeen } = useNotifications();
   const [feedItems, setFeedItems] = useState<BathEntry[]>([]);
   const [feedLoading, setFeedLoading] = useState(true);
+  const [signupsByBathId, setSignupsByBathId] = useState<Map<string, BathSignup[]>>(new Map());
+  const [loadingSignups, setLoadingSignups] = useState(true);
   const [openCommentsId, setOpenCommentsId] = useState<string | null>(null);
 
   useEffect(() => {
     setFeedLoading(true);
+    setLoadingSignups(true);
     const bathsCollectionRef = collection(db, "baths");
     const q = query(bathsCollectionRef, orderBy("createdAt", "desc"));
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+    const unsubscribe = onSnapshot(q, async (querySnapshot) => {
       const items: BathEntry[] = [];
+      const signupPromises: Promise<{ bathId: string; signups: BathSignup[] }>[] = [];
 
-      querySnapshot.forEach((doc) => {
-        const data = doc.data() as BathEntry;
-        items.push({ ...data, id: doc.id });
-        // attendees are stored as plain names
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data() as BathEntry;
+        items.push({ ...data, id: docSnap.id });
+        if (data.type === "planned") {
+          signupPromises.push(
+            getBathSignups(docSnap.id)
+              .then((s) => ({ bathId: docSnap.id, signups: s }))
+              .catch((err) => {
+                console.error(`Error fetching signups for bath ${docSnap.id}:`, err);
+                return { bathId: docSnap.id, signups: [] };
+              })
+          );
+        }
       });
       setFeedItems(items);
+
+      try {
+        const signupResults = await Promise.all(signupPromises);
+        const newMap = new Map<string, BathSignup[]>();
+        signupResults.forEach((res) => newMap.set(res.bathId, res.signups));
+        setSignupsByBathId(newMap);
+      } catch (error) {
+        console.error("Error fetching some signups: ", error);
+      } finally {
+        setLoadingSignups(false);
+      }
+
       setFeedLoading(false);
     }, (error) => {
       console.error("Error fetching feed items: ", error);
       toast({ variant: "destructive", title: "Feil", description: "Kunne ikke laste feed." });
       setFeedLoading(false);
+      setLoadingSignups(false);
     });
 
     return () => unsubscribe();
   }, [toast]);
 
   useEffect(() => {
-    if (!feedLoading) {
+    if (!feedLoading && !loadingSignups) {
       markFeedSeen();
     }
-  }, [feedLoading, markFeedSeen, feedItems]);
+  }, [feedLoading, loadingSignups, markFeedSeen, feedItems]);
+
 
   const handleReaction = async (
     bathId: string,
@@ -91,7 +118,7 @@ export function RealTimeFeed() {
   };
 
 
-  if (authLoading || feedLoading) {
+  if (authLoading || feedLoading || loadingSignups) {
     return (
       <div className="space-y-6">
         {Array.from({ length: 3 }).map((_, i) => (
@@ -190,6 +217,7 @@ export function RealTimeFeed() {
               <div className="space-y-2">
                 <h3 className="font-semibold text-lg flex items-center"><CalendarCheck className="h-5 w-5 mr-2 text-primary" /> {entry.description}</h3>
                 {entry.location && <p className="text-sm text-muted-foreground">Sted: {entry.location}</p>}
+
                 {/* Attendee count and list removed */}
               </div>
             )}
