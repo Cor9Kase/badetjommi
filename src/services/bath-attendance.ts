@@ -9,6 +9,7 @@ import { doc, runTransaction } from 'firebase/firestore';
  * @param bathId The id of the bath document
  * @param name The name of the user attending
  */
+
 export async function joinBath(bathId: string, name: string): Promise<void> {
   if (!name) {
     throw new Error('User must be logged in');
