@@ -32,7 +32,6 @@ const ReactionButton: FC<{ icon: React.ElementType, count: number, label: string
   </Button>
 );
 
-
 export function RealTimeFeed() {
   const { toast } = useToast();
   const { currentUser, userProfile, loading: authLoading } = useAuth();
@@ -48,9 +47,11 @@ export function RealTimeFeed() {
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const items: BathEntry[] = [];
+
       querySnapshot.forEach((doc) => {
         const data = doc.data() as BathEntry;
         items.push({ ...data, id: doc.id });
+        // attendees are stored as plain names
       });
       setFeedItems(items);
       setFeedLoading(false);
@@ -77,7 +78,7 @@ export function RealTimeFeed() {
     const bath = feedItems.find(
       (b): b is PlannedBath => b.id === plannedBathId && b.type === "planned"
     );
-    if (userProfile && bath?.attendees?.includes(userProfile.name)) {
+    if (bath?.attendees?.includes(userProfile?.name || '')) {
       toast({
         title: "Allerede påmeldt",
         description: "Du er allerede påmeldt",
@@ -89,7 +90,8 @@ export function RealTimeFeed() {
       return;
     }
     try {
-      await joinBath(plannedBathId, userProfile.name);
+      await joinBath(plannedBathId, userProfile?.name || '');
+      // State updates via the onSnapshot listener
       toast({
         title: "Påmeldt!",
         description: `Du er nå påmeldt "${bathDescription}".`,
@@ -109,7 +111,7 @@ export function RealTimeFeed() {
     const bath = feedItems.find(
       (b): b is PlannedBath => b.id === plannedBathId && b.type === "planned"
     );
-    if (!bath?.attendees?.includes(userProfile.name)) {
+    if (!bath?.attendees?.includes(userProfile?.name || '')) {
       toast({
         variant: "destructive",
         title: "Ikke påmeldt",
@@ -119,7 +121,7 @@ export function RealTimeFeed() {
     }
 
     try {
-      await leaveBath(plannedBathId, userProfile.name);
+      await leaveBath(plannedBathId, userProfile?.name || '');
       toast({
         title: "Avmeldt!",
         description: `Du er nå avmeldt "${bathDescription}".`,
@@ -313,7 +315,7 @@ export function RealTimeFeed() {
                    <Button size="sm" variant="outline" disabled>
                      <Info className="h-4 w-4 mr-2" /> Du arrangerer
                    </Button>
-                ) : currentUser && userProfile && entry.attendees && entry.attendees.includes(userProfile.name) ? (
+                ) : currentUser && entry.attendees && entry.attendees.includes(userProfile?.name || '') ? (
                   <Button
                     size="sm"
                     variant="outline"

@@ -69,7 +69,7 @@ export function UpcomingPlannedBaths() {
       return;
     }
     const bath = baths.find(b => b.id === bathId);
-    if (bath?.attendees?.includes(currentUser.displayName)) {
+    if (bath?.attendees?.includes(currentUser.displayName || '')) {
       toast({
         title: "Allerede påmeldt",
         description: "Du er allerede påmeldt",
@@ -77,7 +77,7 @@ export function UpcomingPlannedBaths() {
       return;
     }
     try {
-      await joinBath(bathId, currentUser.displayName);
+      await joinBath(bathId, currentUser.displayName || '');
       toast({ title: "Påmeldt!", description: `Du er nå påmeldt \"${description}\".` });
     } catch (error) {
       console.error("Error signing up: ", error);
@@ -91,7 +91,7 @@ export function UpcomingPlannedBaths() {
       return;
     }
     const bath = baths.find(b => b.id === bathId);
-    if (!bath?.attendees?.includes(currentUser.displayName)) {
+    if (!bath?.attendees?.includes(currentUser.displayName || '')) {
       toast({
         variant: "destructive",
         title: "Ikke påmeldt",
@@ -101,7 +101,7 @@ export function UpcomingPlannedBaths() {
     }
 
     try {
-      await leaveBath(bathId, currentUser.displayName);
+      await leaveBath(bathId, currentUser.displayName || '');
       toast({ title: "Avmeldt!", description: `Du er nå avmeldt \"${description}\".` });
     } catch (error) {
       console.error("Error signing off: ", error);
@@ -183,7 +183,7 @@ export function UpcomingPlannedBaths() {
               <Button size="sm" variant="outline" disabled>
                 <Info className="h-4 w-4 mr-2" /> Du arrangerer
               </Button>
-            ) : currentUser && bath.attendees && currentUser.displayName && bath.attendees.includes(currentUser.displayName) ? (
+            ) : currentUser && bath.attendees && bath.attendees.includes(currentUser.displayName || '') ? (
               <Button size="sm" variant="outline" onClick={() => handleSignOff(bath.id, bath.description)}>
                 <UserMinus className="h-4 w-4 mr-2" /> Meld deg av
               </Button>

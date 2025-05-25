@@ -62,7 +62,8 @@ export default function UserProfilePage() {
         snapshot.forEach(doc => {
           const data = doc.data() as BathEntry;
           logEntries.push({ ...data, id: doc.id });
-        });
+           // attendees are stored as plain names
+         });
         setBathLog(logEntries);
         setLogLoading(false);
       }, (error) => {
@@ -83,7 +84,7 @@ export default function UserProfilePage() {
     const bath = bathLog.find(
       (b): b is PlannedBath => b.id === bathId && b.type === "planned"
     );
-    if (loggedInUserProfile && bath?.attendees?.includes(loggedInUserProfile.name)) {
+    if (bath?.attendees?.includes(loggedInUserProfile?.name || '')) {
         toast({
             title: "Allerede påmeldt",
             description: "Du er allerede påmeldt",
@@ -91,11 +92,7 @@ export default function UserProfilePage() {
         return;
     }
     try {
-        if (!loggedInUserProfile) {
-            toast({ variant: "destructive", title: "Logg Inn", description: "Du må være logget inn." });
-            return;
-        }
-        await joinBath(bathId, loggedInUserProfile.name);
+        await joinBath(bathId, loggedInUserProfile?.name || '');
         toast({
             title: "Påmeldt!",
             description: `Du er nå påmeldt "${bathDescription}".`,
@@ -116,7 +113,7 @@ export default function UserProfilePage() {
     const bath = bathLog.find(
       (b): b is PlannedBath => b.id === bathId && b.type === "planned"
     );
-    if (!bath?.attendees?.includes(loggedInUserProfile.name)) {
+    if (!bath?.attendees?.includes(loggedInUserProfile?.name || '')) {
       toast({
         variant: "destructive",
         title: "Ikke påmeldt",
@@ -126,7 +123,7 @@ export default function UserProfilePage() {
     }
 
     try {
-      await leaveBath(bathId, loggedInUserProfile.name);
+      await leaveBath(bathId, loggedInUserProfile?.name || '');
       toast({
         title: "Avmeldt!",
         description: `Du er nå avmeldt "${bathDescription}".`,
@@ -263,7 +260,7 @@ export default function UserProfilePage() {
                            <Button size="sm" variant="outline" className="mt-2 w-full sm:w-auto" disabled>
                              <Info className="mr-2 h-4 w-4" /> Du arrangerer
                            </Button>
-                        ) : loggedInUser && loggedInUserProfile && bath.attendees && bath.attendees.includes(loggedInUserProfile.name) ? (
+                        ) : loggedInUser && bath.attendees && bath.attendees.includes(loggedInUserProfile?.name || '') ? (
                            <Button 
                              size="sm" 
                              variant="outline" 

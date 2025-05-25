@@ -3,8 +3,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to ensure only one attendee name is added or removed
-    function isUpdatingAttendees() {
+    // Helper function to ensure only a single name is added or removed in
+    // the attendees array. We no longer store UIDs here, only plain names.
+    function isUpdatingSingleNameInAttendees() {
       // Definer variabler med 'let' øverst i funksjonen.
       let attendeesExists = 'attendees' in request.resource.data;
       let nextAttendees = request.resource.data.get('attendees', null); // Bruk .get for sikkerhet
@@ -15,10 +16,10 @@ service cloud.firestore {
       // Hvis ikke, bruk en tom diff ([].diff([])) for å unngå feil.
       let diff = isList ? nextAttendees.diff(currentAttendees) : [].diff([]);
 
-      // Return true if exactly one name is added or removed
+      // Return true only if exactly one string is added or removed.
       return isList && (
-        (diff.added().size() == 1 && diff.removed().size() == 0) ||
-        (diff.removed().size() == 1 && diff.added().size() == 0)
+        (diff.added().size() == 1 && diff.removed().size() == 0 && diff.added()[0] is string) ||
+        (diff.removed().size() == 1 && diff.added().size() == 0 && diff.removed()[0] is string)
       );
     }
 
@@ -47,7 +48,7 @@ service cloud.firestore {
         (
           (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendees']) ||
           (request.resource.data.diff(resource.data).affectedKeys().size() == 0 && 'attendees' in request.resource.data)) &&
-          isUpdatingAttendees()
+          isUpdatingSingleNameInAttendees()
         )
       );
 
