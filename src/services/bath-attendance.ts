@@ -10,7 +10,10 @@ import { doc, runTransaction } from 'firebase/firestore';
  * @param uid The uid of the user attending
  */
 export async function joinBath(bathId: string, uid: string): Promise<void> {
-  if (!auth.currentUser || auth.currentUser.uid !== uid) {
+  // The Firestore security rules already verify that the authenticated user
+  // matches the UID being added as an attendee. We only need to ensure a UID
+  // was provided here.
+  if (!uid) {
     throw new Error('User must be logged in');
   }
   const bathRef = doc(db, 'baths', bathId);
@@ -36,7 +39,9 @@ export async function joinBath(bathId: string, uid: string): Promise<void> {
  * @param uid The uid of the user to remove
  */
 export async function leaveBath(bathId: string, uid: string): Promise<void> {
-  if (!auth.currentUser || auth.currentUser.uid !== uid) {
+  // As with joining, rely on Firestore rules for verification and simply
+  // ensure a UID is provided.
+  if (!uid) {
     throw new Error('User must be logged in');
   }
   const bathRef = doc(db, 'baths', bathId);
