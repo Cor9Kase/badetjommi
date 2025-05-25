@@ -57,7 +57,7 @@ export function UpcomingPlannedBaths() {
         }
       });
 
-      planned.sort((a, b) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime());
+      planned.sort((a, b) => new Date(`${b.date}T${b.time}`).getTime() - new Date(`${a.date}T${a.time}`).getTime());
       setBaths(planned);
       setLoadingBaths(false);
 
