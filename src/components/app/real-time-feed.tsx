@@ -11,12 +11,14 @@ import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import type { FC } from "react";
 import { useState, useEffect } from "react";
-import type { BathEntry } from "@/types/bath";
+import type { BathEntry, PlannedBath } from "@/types/bath"; 
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { db } from "@/lib/firebase";
 import { useNotifications } from "@/contexts/notification-context";
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, Timestamp, increment } from "firebase/firestore";
+import { getBathSignups } from '@/services/bath-signup';
+import type { BathSignup } from '@/types/signup';
 
 import { CommentsDialog } from "./comments-dialog";
 import { format } from "date-fns";
@@ -33,7 +35,7 @@ const ReactionButton: FC<{ icon: React.ElementType, count: number, label: string
 
 export function RealTimeFeed() {
   const { toast } = useToast();
-  const { currentUser, loading: authLoading } = useAuth();
+  const { currentUser, userProfile, loading: authLoading } = useAuth();
   const { markFeedSeen } = useNotifications();
   const [feedItems, setFeedItems] = useState<BathEntry[]>([]);
   const [feedLoading, setFeedLoading] = useState(true);
@@ -43,58 +45,67 @@ export function RealTimeFeed() {
 
   useEffect(() => {
     setFeedLoading(true);
-    setLoadingSignups(true);
+    setLoadingSignups(true); // Initialize loading state for signups
     const bathsCollectionRef = collection(db, "baths");
     const q = query(bathsCollectionRef, orderBy("createdAt", "desc"));
 
     const unsubscribe = onSnapshot(q, async (querySnapshot) => {
       const items: BathEntry[] = [];
-      const signupPromises: Promise<{ bathId: string; signups: BathSignup[] }>[] = [];
-
-      querySnapshot.forEach((docSnap) => {
-        const data = docSnap.data() as BathEntry;
-        items.push({ ...data, id: docSnap.id });
-        if (data.type === "planned") {
-          signupPromises.push(
-            getBathSignups(docSnap.id)
-              .then((s) => ({ bathId: docSnap.id, signups: s }))
-              .catch((err) => {
-                console.error(`Error fetching signups for bath ${docSnap.id}:`, err);
-                return { bathId: docSnap.id, signups: [] };
-              })
-          );
-        }
+      querySnapshot.forEach((doc) => {
+        const data = doc.data() as BathEntry;
+        items.push({ ...data, id: doc.id });
       });
+
       setFeedItems(items);
+      setFeedLoading(false); // Feed items themselves are loaded
 
-      try {
-        const signupResults = await Promise.all(signupPromises);
-        const newMap = new Map<string, BathSignup[]>();
-        signupResults.forEach((res) => newMap.set(res.bathId, res.signups));
-        setSignupsByBathId(newMap);
-      } catch (error) {
-        console.error("Error fetching some signups: ", error);
-      } finally {
-        setLoadingSignups(false);
+      // Now fetch signups for planned baths
+      const plannedBathItems = items.filter(item => item.type === 'planned') as PlannedBath[];
+      if (plannedBathItems.length > 0) {
+        // setLoadingSignups(true); // Already true from the start of useEffect
+        const signupPromises = plannedBathItems.map(bath =>
+          getBathSignups(bath.id)
+            .then(signups => ({ bathId: bath.id, signups }))
+            .catch(err => {
+              console.error(`Error fetching signups for bath ${bath.id} in feed:`, err);
+              // Potentially toast here if desired, or handle silently
+              return { bathId: bath.id, signups: [] }; // Return empty on error for this bath
+            })
+        );
+
+        Promise.all(signupPromises)
+          .then(results => {
+            const newSignupsMap = new Map<string, BathSignup[]>();
+            results.forEach(result => newSignupsMap.set(result.bathId, result.signups));
+            setSignupsByBathId(newSignupsMap);
+          })
+          .catch(error => {
+            console.error("Error fetching some signups for feed: ", error);
+            // General error for Promise.all if any individual promise rejects unexpectedly
+            // Potentially set an error state here for the UI if needed
+          })
+          .finally(() => {
+            setLoadingSignups(false); // Finish loading signups
+          });
+      } else {
+        setLoadingSignups(false); // No planned baths, so no signups to load
+        setSignupsByBathId(new Map()); // Clear any old signup data
       }
-
-      setFeedLoading(false);
     }, (error) => {
       console.error("Error fetching feed items: ", error);
       toast({ variant: "destructive", title: "Feil", description: "Kunne ikke laste feed." });
       setFeedLoading(false);
-      setLoadingSignups(false);
+      setLoadingSignups(false); // Also set loading signups to false on error
     });
 
     return () => unsubscribe();
   }, [toast]);
 
   useEffect(() => {
-    if (!feedLoading && !loadingSignups) {
+    if (!feedLoading && !loadingSignups) { // Add !loadingSignups
       markFeedSeen();
     }
-  }, [feedLoading, loadingSignups, markFeedSeen, feedItems]);
-
+  }, [feedLoading, loadingSignups, markFeedSeen, feedItems]); // Add loadingSignups
 
   const handleReaction = async (
     bathId: string,
@@ -118,7 +129,7 @@ export function RealTimeFeed() {
   };
 
 
-  if (authLoading || feedLoading || loadingSignups) {
+  if (authLoading || feedLoading || loadingSignups) { // Include loadingSignups
     return (
       <div className="space-y-6">
         {Array.from({ length: 3 }).map((_, i) => (
@@ -140,7 +151,8 @@ export function RealTimeFeed() {
     );
   }
 
-  if (feedItems.length === 0) {
+  // Adjusted condition for "No items" to wait for all loading states
+  if (!authLoading && !feedLoading && !loadingSignups && feedItems.length === 0) {
     return (
       <div className="text-center text-muted-foreground py-8">
         <Droplets className="mx-auto h-12 w-12 mb-4 text-primary" />
@@ -213,14 +225,26 @@ export function RealTimeFeed() {
               </div>
             )}
             
-            {entry.type === 'planned' && (
-              <div className="space-y-2">
-                <h3 className="font-semibold text-lg flex items-center"><CalendarCheck className="h-5 w-5 mr-2 text-primary" /> {entry.description}</h3>
-                {entry.location && <p className="text-sm text-muted-foreground">Sted: {entry.location}</p>}
-
-                {/* Attendee count and list removed */}
-              </div>
-            )}
+            {entry.type === 'planned' && (() => {
+              const signupsForThisBath = signupsByBathId.get(entry.id) || [];
+              return (
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-lg flex items-center">
+                    <CalendarCheck className="h-5 w-5 mr-2 text-primary" /> {entry.description}
+                  </h3>
+                  {entry.location && <p className="text-sm text-muted-foreground">Sted: {entry.location}</p>}
+                  <p className="text-sm text-muted-foreground">
+                    <Users className="h-4 w-4 mr-1 inline-block" />
+                    {signupsForThisBath.length} påmeldt
+                  </p>
+                  {signupsForThisBath.length > 0 && (
+                    <div className="text-sm text-muted-foreground">
+                      Deltakere: {signupsForThisBath.map(s => s.displayName).join(', ')}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </CardContent>
           {/* Separator and CardFooter are conditional based on entry type */}
           {entry.type === 'logged' && (

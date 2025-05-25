@@ -57,7 +57,8 @@ export function UpcomingPlannedBaths() {
         }
       });
 
-      planned.sort((a, b) => new Date(`${b.date}T${b.time}`).getTime() - new Date(`${a.date}T${a.time}`).getTime());
+      // The line below was removed to rely on server-side sorting from Firestore query
+      // planned.sort((a, b) => new Date(`${a.date}T${a.time}`).getTime() - new Date(`${b.date}T${b.time}`).getTime());
       setBaths(planned);
       setLoadingBaths(false);
 
