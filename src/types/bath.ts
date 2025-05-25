@@ -34,7 +34,6 @@ export interface PlannedBath extends BathBase {
   type: 'planned';
   description: string; // Title or description of the planned event
 
-  attendees: string[]; // Array of attendee names
   // invitedGuestsText is part of the form, not necessarily stored directly this way unless needed.
   // It's more of a note during creation.
 }
