@@ -44,6 +44,7 @@ export default function RootLayout({
                     src="https://firebasestorage.googleapis.com/v0/b/badekompis.firebasestorage.app/o/Frame%204%201.png?alt=media&token=55e6a37b-6a7d-46c9-a044-ecc5fdf90af6"
                     width={200}
                     height={96}
+                    alt="Badekompis logo"
                     className="h-24 w-auto"
                   />
                 </div>

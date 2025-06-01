@@ -108,15 +108,16 @@ export function PlanBathForm() {
     }
     setIsSubmitting(true);
 
-    const plannedBathData: CreatePlannedBathDTO = { 
+    const plannedBathData: CreatePlannedBathDTO = {
       type: 'planned',
-      userId: currentUser.uid, 
-      userName: userProfile.name, 
-      userAvatar: userProfile.avatarUrl || "", 
-      date: format(data.date, "yyyy-MM-dd"), 
+      userId: currentUser.uid,
+      userName: userProfile.name,
+      userAvatar: userProfile.avatarUrl || "",
+      date: format(data.date, "yyyy-MM-dd"),
       time: data.time,
       location: data.location,
       description: data.description,
+      attendees: [],
       createdAt: Date.now(),
     };
 

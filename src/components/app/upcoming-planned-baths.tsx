@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
-import { CalendarCheck, Users, UserMinus, UserPlus, Info, Waves } from "lucide-react";
+import { CalendarCheck, Users, UserMinus, UserPlus, Info, Waves, XCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -15,6 +15,7 @@ import { db } from "@/lib/firebase";
 import { useNotifications } from "@/contexts/notification-context";
 import { collection, query, orderBy, onSnapshot, Timestamp } from "firebase/firestore";
 import { signUpForBath, cancelSignUp, getBathSignups } from "@/services/bath-signup";
+import { deleteBath } from "@/services/bath";
 import type { BathEntry, PlannedBath } from "@/types/bath";
 import type { BathSignup } from "@/types/signup"; // Updated import
 import { format } from "date-fns";
@@ -141,6 +142,24 @@ export function UpcomingPlannedBaths() {
     }
   };
 
+  const handleCancelBath = async (bathId: string, description: string) => {
+    if (!currentUser) {
+      toast({ variant: "destructive", title: "Logg Inn", description: "Du må være logget inn." });
+      return;
+    }
+    if (!window.confirm(`Avlyse \"${description}\"?`)) {
+      return;
+    }
+    try {
+      await deleteBath(bathId);
+      toast({ title: "Bad avlyst", description: `\"${description}\" er avlyst.` });
+      setBaths(prev => prev.filter(b => b.id !== bathId));
+    } catch (error) {
+      console.error("Error cancelling bath: ", error);
+      toast({ variant: "destructive", title: "Feil", description: "Kunne ikke avlyse badet." });
+    }
+  };
+
   const formatDateForDisplay = (dateInput: string | Timestamp) => {
     try {
       const date = dateInput instanceof Timestamp ? dateInput.toDate() : new Date(dateInput);
@@ -222,8 +241,8 @@ export function UpcomingPlannedBaths() {
                 <span>{signupsForThisBath.length} påmeldt</span>
               </div>
               {isOrganizer ? (
-                <Button size="sm" variant="outline" disabled>
-                  <Info className="h-4 w-4 mr-2" /> Du arrangerer
+                <Button size="sm" variant="destructive" onClick={() => handleCancelBath(bath.id, bath.description)}>
+                  <XCircle className="h-4 w-4 mr-2" /> Avlys
                 </Button>
               ) : isCurrentUserSignedUp ? (
                 <Button size="sm" variant="outline" onClick={() => handleSignOff(bath.id, bath.description)} disabled={!currentUser}>
