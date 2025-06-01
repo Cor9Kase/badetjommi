@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+
 import { Waves } from "lucide-react";
 import { ClientLayoutWrapper } from "@/components/layout/client-layout-wrapper";
 import { AuthProvider } from "@/contexts/auth-context"; // Import AuthProvider
