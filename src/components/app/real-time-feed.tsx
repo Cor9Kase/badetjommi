@@ -5,7 +5,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MessageCircle, ThumbsUp, Heart, PartyPopper, Droplets, CalendarCheck, Users, UserCheck, UserPlus, Info, UserMinus, Smile, Waves } from "lucide-react";
+import { MessageCircle, ThumbsUp, Heart, PartyPopper, Droplets, CalendarCheck, Users, UserCheck, UserPlus, Info, UserMinus, Smile, Waves, MoreHorizontal } from "lucide-react";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
@@ -25,12 +26,26 @@ import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 
 
-const ReactionButton: FC<{ icon: React.ElementType, count: number, label: string, onClick?: () => void, disabled?: boolean }> = ({ icon: Icon, count, label, onClick, disabled }) => (
-  <Button variant="ghost" size="sm" className="flex items-center gap-1 text-muted-foreground hover:text-accent" onClick={onClick} disabled={disabled}>
-    <Icon className="h-4 w-4" />
-    <span>{count}</span>
-    <span className="sr-only">{label}</span>
-  </Button>
+const ReactionMenu: FC<{ counts: { thumbsUp: number; heart: number; party: number }; onReact: (reaction: 'thumbsUp' | 'heart' | 'party') => void; disabled?: boolean }> = ({ counts, onReact, disabled }) => (
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <Button variant="ghost" size="sm" className="flex items-center gap-1 text-muted-foreground hover:text-accent" disabled={disabled}>
+        <MoreHorizontal className="h-4 w-4" />
+        <span className="sr-only">Reaksjoner</span>
+      </Button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent align="start">
+      <DropdownMenuItem onSelect={() => onReact('thumbsUp')} className="flex items-center gap-2">
+        <ThumbsUp className="h-4 w-4" /> {counts.thumbsUp}
+      </DropdownMenuItem>
+      <DropdownMenuItem onSelect={() => onReact('heart')} className="flex items-center gap-2">
+        <Heart className="h-4 w-4" /> {counts.heart}
+      </DropdownMenuItem>
+      <DropdownMenuItem onSelect={() => onReact('party')} className="flex items-center gap-2">
+        <PartyPopper className="h-4 w-4" /> {counts.party}
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  </DropdownMenu>
 );
 
 export function RealTimeFeed() {
@@ -251,29 +266,11 @@ export function RealTimeFeed() {
             <>
               <Separator />
               <CardFooter className="p-2 flex justify-between items-center bg-secondary/30">
-                <div className="flex items-center space-x-1">
-                  <ReactionButton
-                    icon={ThumbsUp}
-                    count={entry.reactions.thumbsUp}
-                    label="Tommel Opp"
-                    onClick={() => handleReaction(entry.id, 'thumbsUp')}
-                    disabled={!currentUser}
-                  />
-                  <ReactionButton
-                    icon={Heart}
-                    count={entry.reactions.heart}
-                    label="Hjerte"
-                    onClick={() => handleReaction(entry.id, 'heart')}
-                    disabled={!currentUser}
-                  />
-                  <ReactionButton
-                    icon={PartyPopper}
-                    count={entry.reactions.party}
-                    label="Fest"
-                    onClick={() => handleReaction(entry.id, 'party')}
-                    disabled={!currentUser}
-                  />
-                </div>
+                <ReactionMenu
+                  counts={entry.reactions}
+                  onReact={(reaction) => handleReaction(entry.id, reaction)}
+                  disabled={!currentUser}
+                />
                 <Button
                   variant="ghost"
                   size="sm"
