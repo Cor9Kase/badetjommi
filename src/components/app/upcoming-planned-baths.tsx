@@ -22,6 +22,7 @@ import { nb } from "date-fns/locale";
 
 export function UpcomingPlannedBaths() {
   const { toast } = useToast();
+
   const { currentUser, userProfile, loading: authLoading } = useAuth(); // Updated useAuth destructuring
   const { markPlannedSeen } = useNotifications();
   const [baths, setBaths] = useState<PlannedBath[]>([]);
