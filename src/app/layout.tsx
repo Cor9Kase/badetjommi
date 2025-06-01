@@ -41,15 +41,12 @@ export default function RootLayout({
               <div className="container mx-auto flex items-center justify-between">
                 <div className="flex items-center gap-2 md:gap-3">
                   <Image
-                    src="https://firebasestorage.googleapis.com/v0/b/badekompis.firebasestorage.app/o/faf3f0e2ed9a26a67add530be61213ad0e2cf742ee9a43eccb9495fb66ae2295.png?alt=media&token=20095fde-626c-4cdd-9443-847e57dfe2e4"
+                    src="https://firebasestorage.googleapis.com/v0/b/badekompis.firebasestorage.app/o/Bilde.png?alt=media&token=762623ff-fc04-43ed-ab90-3e725c1c1213"
                     alt="Badekompis logo"
                     width={56}
                     height={56}
                     className="h-12 w-12 md:h-14 md:w-14"
                   />
-                  <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-                    Badekompis
-                  </h1>
                 </div>
               </div>
             </header>
