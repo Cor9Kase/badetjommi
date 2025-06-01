@@ -6,7 +6,7 @@ export default function FeedPage() {
     <div className="space-y-6">
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle className="text-2xl font-semibold">Gruppe-Feed</CardTitle>
+          <CardTitle className="text-3xl font-semibold">Gruppe-Feed</CardTitle>
         </CardHeader>
         <CardContent>
           <RealTimeFeed />
