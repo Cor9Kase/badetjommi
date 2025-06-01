@@ -38,14 +38,14 @@ export default function RootLayout({
           {/* Wrap with AuthProvider */}
           <NotificationProvider>
             <header className="bg-primary text-primary-foreground py-4 px-4 md:px-8 shadow-md sticky top-0 z-40">
-              <div className="container mx-auto flex items-center justify-center">
+              <div className="container mx-auto flex items-center justify-between">
                 <div className="flex items-center gap-2 md:gap-3">
                   <Image
                     src="https://firebasestorage.googleapis.com/v0/b/badekompis.firebasestorage.app/o/faf3f0e2ed9a26a67add530be61213ad0e2cf742ee9a43eccb9495fb66ae2295.png?alt=media&token=20095fde-626c-4cdd-9443-847e57dfe2e4"
                     alt="Badekompis logo"
-                    width={40}
-                    height={40}
-                    className="h-8 w-8 md:h-10 md:w-10"
+                    width={56}
+                    height={56}
+                    className="h-12 w-12 md:h-14 md:w-14"
                   />
                   <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
                     Badekompis
