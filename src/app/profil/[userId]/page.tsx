@@ -116,7 +116,7 @@ export default function UserProfilePage() {
               <AvatarFallback>{typeof user.name === 'string' ? user.name.substring(0, 2).toUpperCase() : '??'}</AvatarFallback>
             </Avatar>
             <CardTitle className="text-3xl font-bold">{user.name}</CardTitle>
-            {user.bio && <CardDescription className="mt-1 text-md">{user.bio}</CardDescription>}
+            {user.bio && <CardDescription className="mt-1">{user.bio}</CardDescription>}
           </div>
         </CardHeader>
         <CardContent>

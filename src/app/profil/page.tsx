@@ -57,7 +57,7 @@ export default function ProfilPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)] text-center p-6">
         <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
-        <h2 className="text-xl font-semibold text-destructive mb-2">Problem med Profil</h2>
+        <h2 className="text-2xl font-semibold text-destructive mb-2">Problem med Profil</h2>
         <p className="text-muted-foreground mb-1">
           Vi kunne dessverre ikke laste profildataene dine.
         </p>
