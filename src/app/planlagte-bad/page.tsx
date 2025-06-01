@@ -8,7 +8,7 @@ export default function PlannedBathsPage() {
     <div className="space-y-6">
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle className="text-2xl font-semibold">Kommende Bad</CardTitle>
+          <CardTitle className="text-3xl font-semibold">Kommende Bad</CardTitle>
         </CardHeader>
         <CardContent>
           <UpcomingPlannedBaths />

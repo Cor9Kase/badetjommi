@@ -6,7 +6,7 @@ export default function LoggBadPage() {
     <div className="space-y-6">
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle className="text-2xl font-semibold">Logg ditt siste bad!</CardTitle>
+          <CardTitle className="text-3xl font-semibold">Logg ditt siste bad!</CardTitle>
         </CardHeader>
         <CardContent>
           <BathLoggingForm />

@@ -7,7 +7,7 @@ export default function PlanleggBadPage() {
     <div className="space-y-6">
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle className="text-2xl font-semibold flex items-center">
+          <CardTitle className="text-3xl font-semibold flex items-center">
             <CalendarClock className="mr-3 h-7 w-7" />
             Planlegg et Nytt Bad
           </CardTitle>
