@@ -14,7 +14,7 @@ export function ClientLayoutWrapper({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <main className="flex-grow container mx-auto p-4 md:p-6 pb-24"> {/* pb-24 for Navbar space */}
+      <main className="flex-grow container mx-auto p-3 sm:p-6 pb-24"> {/* pb-24 for Navbar space */}
         {children}
       </main>
       <Navbar />
