@@ -42,7 +42,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { nb } from "date-fns/locale";
-import { CalendarIcon, ImagePlus, MapPin, Waves, Thermometer, Upload, Camera, VideoOff, AlertTriangle } from "lucide-react";
+import { CalendarIcon, Clock, ImagePlus, MapPin, Waves, Thermometer, Upload, Camera, VideoOff, AlertTriangle, MessageCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { useState, type ChangeEvent, useEffect, useRef } from "react";
@@ -305,13 +305,15 @@ export function BathLoggingForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="date"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel className="mb-1">Dato for badet</FormLabel>
+                <FormLabel className="mb-1 flex items-center gap-2">
+                  <CalendarIcon className="h-4 w-4" /> Dato for badet
+                </FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
@@ -354,7 +356,9 @@ export function BathLoggingForm() {
             name="time"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Tidspunkt for badet</FormLabel>
+                <FormLabel className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" /> Tidspunkt for badet
+                </FormLabel>
                 <FormControl>
                   <Input type="time" {...field} />
                 </FormControl>
@@ -369,8 +373,8 @@ export function BathLoggingForm() {
           name="location"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="flex items-center">
-                <MapPin className="mr-2 h-4 w-4" /> Sted (Valgfritt)
+              <FormLabel className="flex items-center gap-2">
+                <MapPin className="h-4 w-4" /> Sted (Valgfritt)
               </FormLabel>
               <FormControl>
                 <Input
@@ -391,8 +395,8 @@ export function BathLoggingForm() {
             const currentIndex = field.value ? temperatureFeelings.indexOf(field.value) : 0
             return (
               <FormItem>
-                <FormLabel className="flex items-center">
-                  <Thermometer className="mr-2 h-4 w-4" /> Temperaturfølelse (Valgfritt)
+                <FormLabel className="flex items-center gap-2">
+                  <Thermometer className="h-4 w-4" /> Temperaturfølelse (Valgfritt)
                 </FormLabel>
                 <FormControl>
                   <div className="flex items-center space-x-3">
@@ -422,7 +426,9 @@ export function BathLoggingForm() {
           name="comments"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Kommentarer (Valgfritt)</FormLabel>
+              <FormLabel className="flex items-center gap-2">
+                <MessageCircle className="h-4 w-4" /> Kommentarer (Valgfritt)
+              </FormLabel>
               <FormControl>
                 <Textarea
                   placeholder="Hvordan var vannet? Noen episke historier?"
@@ -443,8 +449,8 @@ export function BathLoggingForm() {
             const { ref, onChange: fieldOnChange, value: _value, ...fieldProps } = field;
             return (
               <FormItem>
-                <FormLabel className="flex items-center">
-                  <ImagePlus className="mr-2 h-4 w-4" /> Bildebevis (Valgfritt)
+                <FormLabel className="flex items-center gap-2">
+                  <ImagePlus className="h-4 w-4" /> Bildebevis (Valgfritt)
                 </FormLabel>
                 <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                   <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full sm:w-auto">
