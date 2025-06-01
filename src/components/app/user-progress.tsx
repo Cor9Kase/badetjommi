@@ -4,14 +4,16 @@ import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { Medal } from "lucide-react";
 
 interface UserProgressProps {
   userId?: string; // Optional: for linking to profile
   userName: string;
-  userAvatar?: string; 
+  userAvatar?: string;
   currentBaths: number;
   targetBaths: number;
   className?: string;
+  rank?: number;
 }
 
 export function UserProgress({
@@ -21,11 +23,31 @@ export function UserProgress({
   currentBaths,
   targetBaths,
   className,
+  rank,
 }: UserProgressProps) {
   const progressPercentage = Math.min((currentBaths / targetBaths) * 100, 100);
 
+  const rankIndicator =
+    rank !== undefined ? (
+      rank <= 3 ? (
+        <Medal
+          className={cn(
+            "h-5 w-5",
+            rank === 1
+              ? "text-yellow-500"
+              : rank === 2
+              ? "text-gray-400"
+              : "text-amber-700"
+          )}
+        />
+      ) : (
+        <span className="text-sm font-semibold w-5 text-center">{rank}</span>
+      )
+    ) : null;
+
   const UserInfo = () => (
     <div className="flex items-center space-x-3">
+      {rankIndicator}
       {userAvatar ? (
         <Avatar className="h-10 w-10">
           <AvatarImage src={userAvatar} alt={userName} data-ai-hint="brukeravatar"/>
@@ -46,7 +68,13 @@ export function UserProgress({
   );
 
   return (
-    <div className={cn("flex flex-col space-y-3 p-1", className)}>
+    <div
+      className={cn(
+        "flex flex-col space-y-3 p-1",
+        rank !== undefined && rank <= 3 && "bg-accent/20 rounded-md",
+        className,
+      )}
+    >
       {userId ? (
          <Link href={`/profil/${userId}`} passHref legacyBehavior>
             <a className="hover:opacity-80 transition-opacity">

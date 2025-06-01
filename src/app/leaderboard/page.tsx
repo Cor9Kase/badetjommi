@@ -79,13 +79,14 @@ export default function LeaderboardPage() {
         <CardContent className="space-y-4">
           {leaderboardData.length > 0 ? (
             leaderboardData.map((user, index) => (
-            <UserProgress 
-              key={user.uid || index} 
+            <UserProgress
+              key={user.uid || index}
+              rank={index + 1}
               userId={user.uid}
-              userName={user.name} 
-              currentBaths={user.currentBaths} 
+              userName={user.name}
+              currentBaths={user.currentBaths}
               targetBaths={user.targetBaths}
-              userAvatar={user.avatarUrl} 
+              userAvatar={user.avatarUrl}
               className="py-3 px-2 border-b last:border-b-0"
             />
           ))
