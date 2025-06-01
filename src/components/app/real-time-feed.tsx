@@ -5,8 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MessageCircle, ThumbsUp, Heart, PartyPopper, Droplets, CalendarCheck, Users, UserCheck, UserPlus, Info, UserMinus, Smile, Waves, MoreHorizontal } from "lucide-react";
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { MessageCircle, ThumbsUp, Heart, PartyPopper, Droplets, CalendarCheck, Users, UserCheck, UserPlus, Info, UserMinus, Smile, Waves } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
@@ -26,26 +25,36 @@ import { format } from "date-fns";
 import { nb } from "date-fns/locale";
 
 
-const ReactionMenu: FC<{ counts: { thumbsUp: number; heart: number; party: number }; onReact: (reaction: 'thumbsUp' | 'heart' | 'party') => void; disabled?: boolean }> = ({ counts, onReact, disabled }) => (
-  <DropdownMenu>
-    <DropdownMenuTrigger asChild>
-      <Button variant="ghost" size="sm" className="flex items-center gap-1 text-muted-foreground hover:text-accent" disabled={disabled}>
-        <MoreHorizontal className="h-4 w-4" />
-        <span className="sr-only">Reaksjoner</span>
-      </Button>
-    </DropdownMenuTrigger>
-    <DropdownMenuContent align="start">
-      <DropdownMenuItem onSelect={() => onReact('thumbsUp')} className="flex items-center gap-2">
-        <ThumbsUp className="h-4 w-4" /> {counts.thumbsUp}
-      </DropdownMenuItem>
-      <DropdownMenuItem onSelect={() => onReact('heart')} className="flex items-center gap-2">
-        <Heart className="h-4 w-4" /> {counts.heart}
-      </DropdownMenuItem>
-      <DropdownMenuItem onSelect={() => onReact('party')} className="flex items-center gap-2">
-        <PartyPopper className="h-4 w-4" /> {counts.party}
-      </DropdownMenuItem>
-    </DropdownMenuContent>
-  </DropdownMenu>
+const ReactionButtons: FC<{ counts: { thumbsUp: number; heart: number; party: number }; onReact: (reaction: 'thumbsUp' | 'heart' | 'party') => void; disabled?: boolean }> = ({ counts, onReact, disabled }) => (
+  <div className="flex gap-2">
+    <Button
+      variant="ghost"
+      size="sm"
+      className="flex items-center gap-1 text-muted-foreground hover:text-accent"
+      disabled={disabled}
+      onClick={() => onReact('thumbsUp')}
+    >
+      <ThumbsUp className="h-4 w-4" /> {counts.thumbsUp}
+    </Button>
+    <Button
+      variant="ghost"
+      size="sm"
+      className="flex items-center gap-1 text-muted-foreground hover:text-accent"
+      disabled={disabled}
+      onClick={() => onReact('heart')}
+    >
+      <Heart className="h-4 w-4" /> {counts.heart}
+    </Button>
+    <Button
+      variant="ghost"
+      size="sm"
+      className="flex items-center gap-1 text-muted-foreground hover:text-accent"
+      disabled={disabled}
+      onClick={() => onReact('party')}
+    >
+      <PartyPopper className="h-4 w-4" /> {counts.party}
+    </Button>
+  </div>
 );
 
 export function RealTimeFeed() {
@@ -266,7 +275,7 @@ export function RealTimeFeed() {
             <>
               <Separator />
               <CardFooter className="p-2 flex justify-between items-center bg-secondary/30">
-                <ReactionMenu
+                <ReactionButtons
                   counts={entry.reactions}
                   onReact={(reaction) => handleReaction(entry.id, reaction)}
                   disabled={!currentUser}
