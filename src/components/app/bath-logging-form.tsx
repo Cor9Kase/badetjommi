@@ -447,7 +447,13 @@ export function BathLoggingForm() {
                   <ImagePlus className="mr-2 h-4 w-4" /> Bildebevis (Valgfritt)
                 </FormLabel>
                 <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-                  <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full sm:w-auto">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="lg"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full sm:w-auto"
+                  >
                     <Upload className="mr-2 h-4 w-4" /> Last opp fil
                   </Button>
                   <Input
@@ -464,7 +470,13 @@ export function BathLoggingForm() {
                     }}
                     {...fieldProps}
                   />
-                  <Button type="button" variant="outline" onClick={() => setIsCameraDialogOpen(true)} className="w-full sm:w-auto">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="lg"
+                    onClick={() => setIsCameraDialogOpen(true)}
+                    className="w-full sm:w-auto"
+                  >
                     <Camera className="mr-2 h-4 w-4" /> Ta bilde
                   </Button>
                 </div>
@@ -489,7 +501,12 @@ export function BathLoggingForm() {
         <canvas ref={canvasRef} className="hidden"></canvas>
 
 
-        <Button type="submit" className="w-full md:w-auto bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isSubmitting || authLoading || !currentUser}>
+        <Button
+          type="submit"
+          size="lg"
+          className="w-full md:w-auto bg-accent hover:bg-accent/90 text-accent-foreground"
+          disabled={isSubmitting || authLoading || !currentUser}
+        >
           {isSubmitting ? <Waves className="mr-2 h-5 w-5 animate-spin" /> : <Waves className="mr-2 h-5 w-5" />}
           {isSubmitting ? "Logger bad..." : "Logg Bad"}
         </Button>
@@ -524,9 +541,15 @@ export function BathLoggingForm() {
           </div>
           <DialogFooter className="sm:justify-between flex-col sm:flex-row gap-2">
             <DialogClose asChild>
-              <Button type="button" variant="outline" className="w-full sm:w-auto">Avbryt</Button>
+              <Button type="button" variant="outline" size="lg" className="w-full sm:w-auto">Avbryt</Button>
             </DialogClose>
-            <Button type="button" onClick={handleCaptureImage} disabled={!hasCameraPermission || !cameraStream || isSubmitting} className="w-full sm:w-auto">
+            <Button
+              type="button"
+              size="lg"
+              onClick={handleCaptureImage}
+              disabled={!hasCameraPermission || !cameraStream || isSubmitting}
+              className="w-full sm:w-auto"
+            >
               <Camera className="mr-2 h-4 w-4" /> Knytt Bilde
             </Button>
           </DialogFooter>

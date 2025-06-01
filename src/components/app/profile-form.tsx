@@ -250,11 +250,23 @@ export function ProfileForm({}: ProfileFormProps) {
         />
         
         <div className="flex flex-col sm:flex-row gap-3 pt-4">
-            <Button type="submit" className="w-full sm:w-auto bg-accent hover:bg-accent/90 text-accent-foreground text-base py-3 px-6" disabled={isSubmitting || loading}>
-            {isSubmitting ? <Waves className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
-            {isSubmitting ? "Lagrer..." : "Lagre Endringer"}
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full sm:w-auto bg-accent hover:bg-accent/90 text-accent-foreground"
+              disabled={isSubmitting || loading}
+            >
+              {isSubmitting ? <Waves className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
+              {isSubmitting ? "Lagrer..." : "Lagre Endringer"}
             </Button>
-            <Button type="button" variant="outline" onClick={handleLogout} className="w-full sm:w-auto text-base py-3 px-6" disabled={loading || isSubmitting}>
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              onClick={handleLogout}
+              className="w-full sm:w-auto"
+              disabled={loading || isSubmitting}
+            >
                 <LogOut className="mr-2 h-5 w-5" />
                 Logg ut
             </Button>

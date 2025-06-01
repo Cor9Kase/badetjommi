@@ -282,7 +282,12 @@ export function PlanBathForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full md:w-auto bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isSubmitting || authLoading || !currentUser}>
+        <Button
+          type="submit"
+          size="lg"
+          className="w-full md:w-auto bg-accent hover:bg-accent/90 text-accent-foreground"
+          disabled={isSubmitting || authLoading || !currentUser}
+        >
           {isSubmitting ? <Waves className="mr-2 h-5 w-5 animate-spin" /> : <Send className="mr-2 h-5 w-5" />}
           {isSubmitting ? "Planlegger..." : "Planlegg Bad"}
         </Button>
