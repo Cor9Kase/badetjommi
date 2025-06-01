@@ -1,4 +1,4 @@
-# Firebase Studio
+# Badekompis
 
 This project uses Firebase for database services but is deployed through [Vercel](https://vercel.com/).
 
