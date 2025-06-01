@@ -58,9 +58,7 @@ export function UserProgress({
       )}
       <Progress value={progressPercentage} aria-label={`${userName}s badeprogresjon`} className="h-3 [&>div]:bg-accent" />
       {currentBaths >= targetBaths && (
-        <p className="text-xs text-center font-semibold text-accent">
-          🎉 Mål Oppnådd! 🎉
-        </p>
+        <p className="text-xs text-center font-semibold text-accent">Mål nådd!</p>
       )}
     </div>
   );
