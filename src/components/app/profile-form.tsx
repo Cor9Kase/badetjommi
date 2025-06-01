@@ -19,7 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { useState, type ChangeEvent, useEffect, useRef } from "react";
-import { ImagePlus, Save, Target, LogIn, LogOut, Waves } from "lucide-react"; // Added LogOut and Waves
+import { ImagePlus, Save, Target, LogIn, LogOut, Waves, User, FileText } from "lucide-react";
 import { useAuth, type UserProfile } from "@/contexts/auth-context";
 import { storage } from "@/lib/firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -167,8 +167,8 @@ export function ProfileForm({}: ProfileFormProps) {
             name="avatar"
             render={({ field }) => ( 
             <FormItem>
-                <FormLabel className="flex items-center text-base">
-                    <ImagePlus className="mr-2 h-5 w-5" /> Profilbilde (Valgfritt)
+                <FormLabel className="flex items-center gap-2 text-base">
+                    <ImagePlus className="h-5 w-5" /> Profilbilde (Valgfritt)
                 </FormLabel>
                 {previewImage && (
                     <div className="my-4 flex justify-center">
@@ -201,7 +201,9 @@ export function ProfileForm({}: ProfileFormProps) {
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-base">Brukernavn / Visningsnavn</FormLabel>
+              <FormLabel className="flex items-center gap-2 text-base">
+                <User className="h-5 w-5" /> Brukernavn / Visningsnavn
+              </FormLabel>
               <FormControl>
                 <Input placeholder="Ditt brukernavn" {...field} className="text-base md:text-sm"/>
               </FormControl>
@@ -219,7 +221,9 @@ export function ProfileForm({}: ProfileFormProps) {
           name="bio"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-base">Bio (Valgfritt)</FormLabel>
+              <FormLabel className="flex items-center gap-2 text-base">
+                <FileText className="h-5 w-5" /> Bio (Valgfritt)
+              </FormLabel>
               <FormControl>
                 <Textarea
                   placeholder="Fortell litt om deg selv og din badeinteresse!"
@@ -238,8 +242,8 @@ export function ProfileForm({}: ProfileFormProps) {
           name="targetBaths"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="flex items-center text-base">
-                <Target className="mr-2 h-5 w-5" /> Mål for Antall Bad
+              <FormLabel className="flex items-center gap-2 text-base">
+                <Target className="h-5 w-5" /> Mål for Antall Bad
               </FormLabel>
               <FormControl>
                 <Input type="number" placeholder="F.eks. 30" {...field} className="text-base md:text-sm"/>

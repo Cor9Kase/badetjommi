@@ -117,8 +117,7 @@ export function PlanBathForm() {
       time: data.time,
       location: data.location,
       description: data.description,
-      attendees: [currentUser.uid], 
-      createdAt: Date.now(), 
+      createdAt: Date.now(),
     };
 
     try {
@@ -181,8 +180,8 @@ export function PlanBathForm() {
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="flex items-center">
-                <FileText className="mr-2 h-4 w-4" /> Tittel / Kort Beskrivelse
+              <FormLabel className="flex items-center gap-2">
+                <FileText className="h-4 w-4" /> Tittel / Kort Beskrivelse
               </FormLabel>
               <FormControl>
                 <Input placeholder="F.eks. Morgenbad Sognsvann, Isbade-utfordring" {...field} />
@@ -191,13 +190,15 @@ export function PlanBathForm() {
             </FormItem>
           )}
         />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="date"
             render={({ field }) => (
               <FormItem className="flex flex-col">
-                <FormLabel className="mb-1 flex items-center"><CalendarIcon className="mr-2 h-4 w-4" />Dato</FormLabel>
+                <FormLabel className="mb-1 flex items-center gap-2">
+                  <CalendarIcon className="h-4 w-4" /> Dato
+                </FormLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
@@ -238,7 +239,9 @@ export function PlanBathForm() {
             name="time"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="flex items-center"><Clock className="mr-2 h-4 w-4" />Tidspunkt</FormLabel>
+                <FormLabel className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" /> Tidspunkt
+                </FormLabel>
                 <FormControl>
                   <Input type="time" {...field} />
                 </FormControl>
@@ -252,8 +255,8 @@ export function PlanBathForm() {
           name="location"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="flex items-center">
-                <MapPin className="mr-2 h-4 w-4" /> Sted
+              <FormLabel className="flex items-center gap-2">
+                <MapPin className="h-4 w-4" /> Sted
               </FormLabel>
               <FormControl>
                 <Input placeholder="F.eks., Sognsvann, Oslo" {...field} />
@@ -267,8 +270,8 @@ export function PlanBathForm() {
           name="invitedGuestsText"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="flex items-center">
-                <Users className="mr-2 h-4 w-4" /> Ekstra Detaljer (Valgfritt notat)
+              <FormLabel className="flex items-center gap-2">
+                <Users className="h-4 w-4" /> Ekstra Detaljer (Valgfritt notat)
               </FormLabel>
               <FormControl>
                 <Textarea
