@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { db } from "@/lib/firebase";
 import { useNotifications } from "@/contexts/notification-context";
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, Timestamp, increment } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, Timestamp, increment } from "firebase/firestore";
 import { getBathSignups } from '@/services/bath-signup';
 import type { BathSignup } from '@/types/signup';
 
@@ -152,6 +152,21 @@ export function RealTimeFeed() {
     }
   };
 
+  const handleDelete = async (bathId: string) => {
+    if (!currentUser) return;
+    const confirm = window.confirm('Slette dette badet?');
+    if (!confirm) return;
+    try {
+      await deleteDoc(doc(db, 'baths', bathId));
+      await updateDoc(doc(db, 'users', currentUser.uid), { currentBaths: increment(-1) });
+      setFeedItems(prev => prev.filter(item => item.id !== bathId));
+      toast({ title: 'Bad slettet' });
+    } catch (error) {
+      console.error('Error deleting bath:', error);
+      toast({ variant: 'destructive', title: 'Feil', description: 'Kunne ikke slette badet.' });
+    }
+  };
+
 
   if (authLoading || feedLoading || loadingSignups) { // Include loadingSignups
     return (
@@ -274,26 +289,38 @@ export function RealTimeFeed() {
           {entry.type === 'logged' && (
             <>
               <Separator />
-              <CardFooter className="p-2 flex justify-between items-center bg-secondary/30">
-                <ReactionButtons
-                  counts={entry.reactions}
-                  onReact={(reaction) => handleReaction(entry.id, reaction)}
-                  disabled={!currentUser}
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground hover:text-accent"
-                  onClick={() => setOpenCommentsId(entry.id)}
-                >
-                  <MessageCircle className="h-4 w-4 mr-1" />
-                  {entry.commentCount} Kommentarer
-                </Button>
-                <CommentsDialog
-                  bathId={entry.id}
-                  open={openCommentsId === entry.id}
-                  onOpenChange={(open) => !open && setOpenCommentsId(null)}
-                />
+              <CardFooter className="p-2 flex flex-wrap justify-between items-center gap-2 bg-secondary/30">
+                <div className="flex items-center gap-2">
+                  <ReactionButtons
+                    counts={entry.reactions}
+                    onReact={(reaction) => handleReaction(entry.id, reaction)}
+                    disabled={!currentUser}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-accent"
+                    onClick={() => setOpenCommentsId(entry.id)}
+                  >
+                    <MessageCircle className="h-4 w-4 mr-1" />
+                    {entry.commentCount} Kommentarer
+                  </Button>
+                  <CommentsDialog
+                    bathId={entry.id}
+                    open={openCommentsId === entry.id}
+                    onOpenChange={(open) => !open && setOpenCommentsId(null)}
+                  />
+                </div>
+                {currentUser && currentUser.uid === entry.userId && (
+                  <div className="flex gap-1">
+                    <Link href={`/rediger-bad/${entry.id}`} className="text-sm underline text-accent">
+                      Rediger
+                    </Link>
+                    <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDelete(entry.id)}>
+                      Slett
+                    </Button>
+                  </div>
+                )}
               </CardFooter>
             </>
           )}

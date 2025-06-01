@@ -13,7 +13,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth, type UserProfile } from "@/contexts/auth-context";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, collection, query, where, orderBy, onSnapshot, Timestamp } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, orderBy, onSnapshot, Timestamp, deleteDoc, updateDoc, increment } from "firebase/firestore";
 import { format as formatDateFns } from "date-fns";
 import { nb } from "date-fns/locale";
 import Link from "next/link";
@@ -83,6 +83,21 @@ export default function UserProfilePage() {
       return formatDateFns(date, "d. MMMM yyyy", { locale: nb });
     } catch (e) {
       return String(dateInput);
+    }
+  };
+
+  const handleDelete = async (bathId: string) => {
+    if (!loggedInUser || loggedInUser.uid !== userId) return;
+    const confirmDelete = window.confirm('Slette dette badet?');
+    if (!confirmDelete) return;
+    try {
+      await deleteDoc(doc(db, 'baths', bathId));
+      await updateDoc(doc(db, 'users', userId), { currentBaths: increment(-1) });
+      setBathLog(prev => prev.filter(b => b.id !== bathId));
+      toast({ title: 'Bad slettet' });
+    } catch (err) {
+      console.error('Error deleting bath:', err);
+      toast({ variant: 'destructive', title: 'Feil', description: 'Kunne ikke slette badet.' });
     }
   };
 
@@ -195,6 +210,14 @@ export default function UserProfilePage() {
                       </div>
                     )}
                   </CardContent>
+                  {loggedInUser && loggedInUser.uid === userId && bath.type === 'logged' && (
+                    <div className="flex justify-end gap-2 px-4 pb-4">
+                      <Link href={`/rediger-bad/${bath.id}`} className="text-sm underline text-accent">Rediger</Link>
+                      <Button variant="ghost" size="sm" className="text-destructive" onClick={() => handleDelete(bath.id)}>
+                        Slett
+                      </Button>
+                    </div>
+                  )}
                 </Card>
               ))}
             </div>
