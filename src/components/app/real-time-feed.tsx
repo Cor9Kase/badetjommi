@@ -39,7 +39,7 @@ const ReactionButton: FC<{ icon: React.ElementType, count: number, label: string
 
 export function RealTimeFeed() {
   const { toast } = useToast();
-  const { currentUser, loading: authLoading } = useAuth();
+  const { currentUser, userProfile, loading: authLoading } = useAuth();
   const { markFeedSeen } = useNotifications();
   const [feedItems, setFeedItems] = useState<BathEntry[]>([]);
   const [feedLoading, setFeedLoading] = useState(true);
@@ -102,7 +102,7 @@ export function RealTimeFeed() {
   }, [feedLoading, loadingSignups, markFeedSeen, feedItems]);
 
   const handleSignUp = async (plannedBathId: string, bathDescription: string) => {
-    if (!currentUser || !currentUser.displayName) {
+    if (!currentUser || !userProfile) {
       toast({ variant: "destructive", title: "Logg Inn", description: "Du må være logget inn for å melde deg på." });
       return;
     }
@@ -116,7 +116,7 @@ export function RealTimeFeed() {
       return;
     }
     try {
-      await signUpForBath(plannedBathId, currentUser.uid, currentUser.displayName!);
+      await signUpForBath(plannedBathId, currentUser.uid, userProfile.name);
       // Optimistic update
       setSignupsByBathId(prev => {
         const newMap = new Map(prev);
@@ -124,7 +124,7 @@ export function RealTimeFeed() {
         const newSignup: BathSignup = {
           id: currentUser.uid,
           userId: currentUser.uid,
-          displayName: currentUser.displayName!,
+          displayName: userProfile.name,
           signedUpAt: Timestamp.now(),
         };
         newMap.set(plannedBathId, [...current, newSignup]);

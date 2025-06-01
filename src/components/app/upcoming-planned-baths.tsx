@@ -22,7 +22,7 @@ import { nb } from "date-fns/locale";
 
 export function UpcomingPlannedBaths() {
   const { toast } = useToast();
-  const { currentUser, loading: authLoading } = useAuth();
+  const { currentUser, userProfile, loading: authLoading } = useAuth();
   const { markPlannedSeen } = useNotifications();
   const [baths, setBaths] = useState<PlannedBath[]>([]);
   const [loadingBaths, setLoadingBaths] = useState(true);
@@ -90,12 +90,12 @@ export function UpcomingPlannedBaths() {
   }, [loadingBaths, loadingSignups, markPlannedSeen, baths]);
 
   const handleSignUp = async (bathId: string, description: string) => {
-    if (!currentUser || !currentUser.uid || !currentUser.displayName) {
+    if (!currentUser || !currentUser.uid || !userProfile) {
       toast({ variant: "destructive", title: "Logg Inn", description: "Du må være logget inn for å melde deg på." });
       return;
     }
     try {
-      await signUpForBath(bathId, currentUser.uid, currentUser.displayName);
+      await signUpForBath(bathId, currentUser.uid, userProfile.name);
       toast({ title: "Påmeldt!", description: `Du er nå påmeldt \"${description}\".` });
       // Optimistic update
       setSignupsByBathId(prevMap => {
@@ -106,7 +106,7 @@ export function UpcomingPlannedBaths() {
         const newSignup: BathSignup = {
           id: currentUser.uid, // doc id is the user's uid
           userId: currentUser.uid,
-          displayName: currentUser.displayName!,
+          displayName: userProfile.name,
           signedUpAt: Timestamp.now(), // Temporary, will be replaced by server value
         };
         newMap.set(bathId, [...currentSignups, newSignup]);
