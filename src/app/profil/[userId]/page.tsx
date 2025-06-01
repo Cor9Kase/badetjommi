@@ -14,7 +14,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth, type UserProfile } from "@/contexts/auth-context";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, collection, query, where, orderBy, onSnapshot, Timestamp } from "firebase/firestore";
-import { joinBath, leaveBath } from "@/services/bath-attendance";
 import { format as formatDateFns } from "date-fns";
 import { nb } from "date-fns/locale";
 import Link from "next/link";
@@ -74,65 +73,6 @@ export default function UserProfilePage() {
       return () => unsubscribe();
     }
   }, [userId, toast]);
-
-
-  const handleSignUpForPlannedBath = async (bathId: string, bathDescription: string) => {
-    if (!loggedInUser) {
-        toast({ variant: "destructive", title: "Logg Inn", description: "Du må være logget inn for å melde deg på." });
-        return;
-    }
-    const bath = bathLog.find(
-      (b): b is PlannedBath => b.id === bathId && b.type === "planned"
-    );
-    if (bath?.attendees?.includes(loggedInUserProfile?.name || '')) {
-        toast({
-            title: "Allerede påmeldt",
-            description: "Du er allerede påmeldt",
-        });
-        return;
-    }
-    try {
-        await joinBath(bathId, loggedInUserProfile?.name || '');
-        toast({
-            title: "Påmeldt!",
-            description: `Du er nå påmeldt "${bathDescription}".`,
-        });
-    } catch (error) {
-        console.error("Error signing up for bath: ", error);
-        toast({ variant: "destructive", title: "Feil", description: "Kunne ikke melde deg på." });
-    }
-  };
-
-  const handleSignOffFromPlannedBath = async (bathId: string, bathDescription: string) => {
-    if (!loggedInUser || !loggedInUserProfile) {
-      toast({ variant: "destructive", title: "Logg Inn", description: "Du må være logget inn." });
-      return;
-    }
-
-    // Find the bath locally to check attendance
-    const bath = bathLog.find(
-      (b): b is PlannedBath => b.id === bathId && b.type === "planned"
-    );
-    if (!bath?.attendees?.includes(loggedInUserProfile?.name || '')) {
-      toast({
-        variant: "destructive",
-        title: "Ikke påmeldt",
-        description: "Du er ikke registrert for dette badet.",
-      });
-      return;
-    }
-
-    try {
-      await leaveBath(bathId, loggedInUserProfile?.name || '');
-      toast({
-        title: "Avmeldt!",
-        description: `Du er nå avmeldt "${bathDescription}".`,
-      });
-    } catch (error) {
-      console.error("Error signing off from bath: ", error);
-      toast({ variant: "destructive", title: "Feil", description: "Kunne ikke melde deg av." });
-    }
-  };
 
   const formatDateForDisplay = (dateInput: string | Timestamp) => {
     try {
@@ -250,35 +190,8 @@ export default function UserProfilePage() {
                     )}
                     {bath.type === 'planned' && (
                       <div className="space-y-2 text-sm">
-                        <div className="flex items-center">
-                          <Users className="h-4 w-4 mr-2 text-muted-foreground" />
-                          <span>{bath.attendees ? bath.attendees.length : 0} påmeldt.</span>
-                        </div>
-                        {bath.attendees && bath.attendees.length > 0 && <p className="text-muted-foreground">Deltakere: {bath.attendees.join(', ')}</p>}
-
-                        {loggedInUser && loggedInUser.uid === bath.userId ? (
-                           <Button size="sm" variant="outline" className="mt-2 w-full sm:w-auto" disabled>
-                             <Info className="mr-2 h-4 w-4" /> Du arrangerer
-                           </Button>
-                        ) : loggedInUser && bath.attendees && bath.attendees.includes(loggedInUserProfile?.name || '') ? (
-                           <Button 
-                             size="sm" 
-                             variant="outline" 
-                             className="mt-2 w-full sm:w-auto" 
-                             onClick={() => handleSignOffFromPlannedBath(bath.id, bath.description)}
-                           >
-                             <UserMinus className="mr-2 h-4 w-4" /> Meld deg av
-                           </Button>
-                        ) : (
-                          <Button 
-                            size="sm" 
-                            className="mt-2 w-full sm:w-auto" 
-                            onClick={() => handleSignUpForPlannedBath(bath.id, bath.description)}
-                            disabled={!loggedInUser}
-                          >
-                            <UserPlus className="mr-2 h-4 w-4" /> Meld deg på
-                          </Button>
-                        )}
+                        {/* UI elements for attendees and sign-up/sign-off buttons removed */}
+                        <p className="italic text-muted-foreground">Detaljer om påmelding vises ikke her lenger.</p>
                       </div>
                     )}
                   </CardContent>

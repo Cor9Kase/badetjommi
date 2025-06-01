@@ -7,6 +7,24 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if true;
       allow create, update, delete: if request.auth != null && request.auth.uid == userId;
+
+      // User-specific notifications
+      match /notifications/{notificationId} {
+        // Users can read their own notifications.
+        allow read: if request.auth != null && request.auth.uid == userId;
+
+        // Users can update the 'read' status of their own notifications.
+        // Only the 'read' field can be changed, and it must be a boolean.
+        allow update: if request.auth != null && request.auth.uid == userId &&
+                         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']) &&
+                         request.resource.data.read is bool;
+
+        // Notifications are created by backend services, not directly by clients.
+        allow create: if false;
+
+        // Notifications are generally not deleted by clients.
+        allow delete: if false;
+      }
     }
 
     // Bath entries logged or planned by users

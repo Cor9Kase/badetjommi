@@ -11,18 +11,14 @@ import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import type { FC } from "react";
 import { useState, useEffect } from "react";
-import type { BathEntry } from "@/types/bath";
+import type { BathEntry, PlannedBath } from "@/types/bath"; 
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { db } from "@/lib/firebase";
 import { useNotifications } from "@/contexts/notification-context";
 import { collection, query, orderBy, onSnapshot, doc, updateDoc, Timestamp, increment } from "firebase/firestore";
-import {
-  signUpForBath,
-  cancelSignUp,
-  getBathSignups,
-} from "@/services/bath-signup";
-import type { BathSignup } from "@/types/signup";
+import { getBathSignups } from '@/services/bath-signup';
+import type { BathSignup } from '@/types/signup';
 
 import { CommentsDialog } from "./comments-dialog";
 import { format } from "date-fns";
@@ -49,132 +45,67 @@ export function RealTimeFeed() {
 
   useEffect(() => {
     setFeedLoading(true);
-    setLoadingSignups(true);
+    setLoadingSignups(true); // Initialize loading state for signups
     const bathsCollectionRef = collection(db, "baths");
     const q = query(bathsCollectionRef, orderBy("createdAt", "desc"));
 
     const unsubscribe = onSnapshot(q, async (querySnapshot) => {
       const items: BathEntry[] = [];
-      const signupPromises: Promise<{ bathId: string; signups: BathSignup[] }>[] = [];
-
-      querySnapshot.forEach((docSnap) => {
-        const data = docSnap.data() as BathEntry;
-        items.push({ ...data, id: docSnap.id });
-        if (data.type === "planned") {
-          signupPromises.push(
-            getBathSignups(docSnap.id)
-              .then((s) => ({ bathId: docSnap.id, signups: s }))
-              .catch((err) => {
-                console.error(`Error fetching signups for bath ${docSnap.id}:`, err);
-                return { bathId: docSnap.id, signups: [] };
-              })
-          );
-        }
+      querySnapshot.forEach((doc) => {
+        const data = doc.data() as BathEntry;
+        items.push({ ...data, id: doc.id });
       });
+
       setFeedItems(items);
+      setFeedLoading(false); // Feed items themselves are loaded
 
-      try {
-        const signupResults = await Promise.all(signupPromises);
-        const newMap = new Map<string, BathSignup[]>();
-        signupResults.forEach((res) => newMap.set(res.bathId, res.signups));
-        setSignupsByBathId(newMap);
-      } catch (error) {
-        console.error("Error fetching some signups: ", error);
-      } finally {
-        setLoadingSignups(false);
+      // Now fetch signups for planned baths
+      const plannedBathItems = items.filter(item => item.type === 'planned') as PlannedBath[];
+      if (plannedBathItems.length > 0) {
+        // setLoadingSignups(true); // Already true from the start of useEffect
+        const signupPromises = plannedBathItems.map(bath =>
+          getBathSignups(bath.id)
+            .then(signups => ({ bathId: bath.id, signups }))
+            .catch(err => {
+              console.error(`Error fetching signups for bath ${bath.id} in feed:`, err);
+              // Potentially toast here if desired, or handle silently
+              return { bathId: bath.id, signups: [] }; // Return empty on error for this bath
+            })
+        );
+
+        Promise.all(signupPromises)
+          .then(results => {
+            const newSignupsMap = new Map<string, BathSignup[]>();
+            results.forEach(result => newSignupsMap.set(result.bathId, result.signups));
+            setSignupsByBathId(newSignupsMap);
+          })
+          .catch(error => {
+            console.error("Error fetching some signups for feed: ", error);
+            // General error for Promise.all if any individual promise rejects unexpectedly
+            // Potentially set an error state here for the UI if needed
+          })
+          .finally(() => {
+            setLoadingSignups(false); // Finish loading signups
+          });
+      } else {
+        setLoadingSignups(false); // No planned baths, so no signups to load
+        setSignupsByBathId(new Map()); // Clear any old signup data
       }
-
-      setFeedLoading(false);
     }, (error) => {
       console.error("Error fetching feed items: ", error);
       toast({ variant: "destructive", title: "Feil", description: "Kunne ikke laste feed." });
       setFeedLoading(false);
-      setLoadingSignups(false);
+      setLoadingSignups(false); // Also set loading signups to false on error
     });
 
     return () => unsubscribe();
   }, [toast]);
 
   useEffect(() => {
-    if (!feedLoading && !loadingSignups) {
+    if (!feedLoading && !loadingSignups) { // Add !loadingSignups
       markFeedSeen();
     }
-  }, [feedLoading, loadingSignups, markFeedSeen, feedItems]);
-
-  const handleSignUp = async (plannedBathId: string, bathDescription: string) => {
-    if (!currentUser || !userProfile) {
-      toast({ variant: "destructive", title: "Logg Inn", description: "Du må være logget inn for å melde deg på." });
-      return;
-    }
-    const signups = signupsByBathId.get(plannedBathId) || [];
-    const alreadySignedUp = currentUser && signups.some(s => s.userId === currentUser.uid);
-    if (alreadySignedUp) {
-      toast({
-        title: "Allerede påmeldt",
-        description: "Du er allerede påmeldt",
-      });
-      return;
-    }
-    try {
-      await signUpForBath(plannedBathId, currentUser.uid, userProfile.name);
-      // Optimistic update
-      setSignupsByBathId(prev => {
-        const newMap = new Map(prev);
-        const current = newMap.get(plannedBathId) || [];
-        const newSignup: BathSignup = {
-          id: currentUser.uid,
-          userId: currentUser.uid,
-          displayName: userProfile.name,
-          signedUpAt: Timestamp.now(),
-        };
-        newMap.set(plannedBathId, [...current, newSignup]);
-        return newMap;
-      });
-      toast({
-        title: "Påmeldt!",
-        description: `Du er nå påmeldt "${bathDescription}".`,
-        variant: "default",
-      });
-    } catch (error) {
-      console.error("Error signing up for bath: ", error);
-      toast({ variant: "destructive", title: "Feil", description: "Kunne ikke melde deg på." });
-    }
-  };
-
-  const handleSignOff = async (plannedBathId: string, bathDescription: string) => {
-    if (!currentUser) {
-      toast({ variant: "destructive", title: "Logg Inn", description: "Du må være logget inn." });
-      return;
-    }
-    const signups = signupsByBathId.get(plannedBathId) || [];
-    const alreadySignedUp = currentUser && signups.some(s => s.userId === currentUser.uid);
-    if (!alreadySignedUp) {
-      toast({
-        variant: "destructive",
-        title: "Ikke påmeldt",
-        description: "Du er ikke registrert for dette badet.",
-      });
-      return;
-    }
-
-    try {
-      await cancelSignUp(plannedBathId, currentUser.uid);
-      setSignupsByBathId(prev => {
-        const newMap = new Map(prev);
-        const current = newMap.get(plannedBathId) || [];
-        newMap.set(plannedBathId, current.filter(s => s.userId !== currentUser.uid));
-        return newMap;
-      });
-      toast({
-        title: "Avmeldt!",
-        description: `Du er nå avmeldt "${bathDescription}".`,
-        variant: "default",
-      });
-    } catch (error) {
-      console.error("Error signing off from bath: ", error);
-      toast({ variant: "destructive", title: "Feil", description: "Kunne ikke melde deg av." });
-    }
-  };
+  }, [feedLoading, loadingSignups, markFeedSeen, feedItems]); // Add loadingSignups
 
   const handleReaction = async (
     bathId: string,
@@ -198,7 +129,7 @@ export function RealTimeFeed() {
   };
 
 
-  if (authLoading || feedLoading || loadingSignups) {
+  if (authLoading || feedLoading || loadingSignups) { // Include loadingSignups
     return (
       <div className="space-y-6">
         {Array.from({ length: 3 }).map((_, i) => (
@@ -220,7 +151,8 @@ export function RealTimeFeed() {
     );
   }
 
-  if (feedItems.length === 0) {
+  // Adjusted condition for "No items" to wait for all loading states
+  if (!authLoading && !feedLoading && !loadingSignups && feedItems.length === 0) {
     return (
       <div className="text-center text-muted-foreground py-8">
         <Droplets className="mx-auto h-12 w-12 mb-4 text-primary" />
@@ -293,28 +225,32 @@ export function RealTimeFeed() {
               </div>
             )}
             
-            {entry.type === 'planned' && (
-              <div className="space-y-2">
-                <h3 className="font-semibold text-lg flex items-center"><CalendarCheck className="h-5 w-5 mr-2 text-primary" /> {entry.description}</h3>
-                {entry.location && <p className="text-sm text-muted-foreground">Sted: {entry.location}</p>}
-                {(() => {
-                  const signups = signupsByBathId.get(entry.id) || [];
-                  return (
-                    <>
-                      <p className="text-sm text-muted-foreground">Antall påmeldte: {signups.length}</p>
-                      {signups.length > 0 && (
-                        <p className="text-sm text-muted-foreground">Deltakere: {signups.map(s => s.displayName).join(', ')}</p>
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
-            )}
+            {entry.type === 'planned' && (() => {
+              const signupsForThisBath = signupsByBathId.get(entry.id) || [];
+              return (
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-lg flex items-center">
+                    <CalendarCheck className="h-5 w-5 mr-2 text-primary" /> {entry.description}
+                  </h3>
+                  {entry.location && <p className="text-sm text-muted-foreground">Sted: {entry.location}</p>}
+                  <p className="text-sm text-muted-foreground">
+                    <Users className="h-4 w-4 mr-1 inline-block" />
+                    {signupsForThisBath.length} påmeldt
+                  </p>
+                  {signupsForThisBath.length > 0 && (
+                    <div className="text-sm text-muted-foreground">
+                      Deltakere: {signupsForThisBath.map(s => s.displayName).join(', ')}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </CardContent>
-          <Separator />
-          <CardFooter className="p-2 flex justify-between items-center bg-secondary/30">
-            {entry.type === 'logged' ? (
-              <>
+          {/* Separator and CardFooter are conditional based on entry type */}
+          {entry.type === 'logged' && (
+            <>
+              <Separator />
+              <CardFooter className="p-2 flex justify-between items-center bg-secondary/30">
                 <div className="flex items-center space-x-1">
                   <ReactionButton
                     icon={ThumbsUp}
@@ -352,46 +288,10 @@ export function RealTimeFeed() {
                   open={openCommentsId === entry.id}
                   onOpenChange={(open) => !open && setOpenCommentsId(null)}
                 />
-              </>
-            ) : ( // Planned bath
-              <div className="flex w-full justify-between items-center">
-                {(() => {
-                  const signups = signupsByBathId.get(entry.id) || [];
-                  const userSignedUp = currentUser ? signups.some(s => s.userId === currentUser.uid) : false;
-                  const isOrganizer = currentUser && entry.userId === currentUser.uid;
-                  return (
-                    <>
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <Users className="h-4 w-4 mr-2" />
-                        <span>{signups.length} påmeldt</span>
-                      </div>
-                      {isOrganizer ? (
-                        <Button size="sm" variant="outline" disabled>
-                          <Info className="h-4 w-4 mr-2" /> Du arrangerer
-                        </Button>
-                      ) : userSignedUp ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleSignOff(entry.id, entry.description)}
-                        >
-                          <UserMinus className="h-4 w-4 mr-2" /> Meld deg av
-                        </Button>
-                      ) : (
-                        <Button
-                          size="sm"
-                          onClick={() => handleSignUp(entry.id, entry.description)}
-                          disabled={!currentUser}
-                        >
-                          <UserPlus className="h-4 w-4 mr-2" /> Meld deg på
-                        </Button>
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
-            )}
-          </CardFooter>
+              </CardFooter>
+            </>
+          )}
+          {/* For planned baths, the CardFooter is now removed, so no specific content here */}
         </Card>
       ))}
     </div>
