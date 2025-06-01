@@ -46,7 +46,7 @@ import { CalendarIcon, Clock, ImagePlus, MapPin, Waves, Thermometer, Upload, Cam
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
 import { useState, type ChangeEvent, useEffect, useRef } from "react";
-import type { WaterTemperatureFeeling, CreateLoggedBathDTO } from "@/types/bath";
+import type { WaterTemperatureFeeling, CreateLoggedBathDTO, LoggedBath } from "@/types/bath";
 import { useAuth } from "@/contexts/auth-context";
 import { db, storage } from "@/lib/firebase";
 import { addDoc, collection, doc, updateDoc, increment, serverTimestamp } from "firebase/firestore";
@@ -87,7 +87,7 @@ const bathLoggingSchema = z.object({
 
 type BathLoggingFormValues = z.infer<typeof bathLoggingSchema>;
 
-export function BathLoggingForm() {
+export function BathLoggingForm({ existingBath }: { existingBath?: LoggedBath }) {
   const { toast } = useToast();
   const { currentUser, userProfile, loading: authLoading, fetchUserProfile } = useAuth();
   const router = useRouter();
@@ -104,14 +104,18 @@ export function BathLoggingForm() {
   // const [initialTime, setInitialTime] = useState<string>("");
 
 
+  const isEditing = !!existingBath;
+
   const form = useForm<BathLoggingFormValues>({
     resolver: zodResolver(bathLoggingSchema),
     defaultValues: {
-      date: new Date(), // Default to client's current date, will be refined in useEffect
-      time: new Date().toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' }), // Default, refined in useEffect
-      location: "",
-      waterTemperature: undefined,
-      comments: "",
+      date: isEditing ? new Date(existingBath!.date) : new Date(),
+      time: isEditing
+        ? existingBath!.time
+        : new Date().toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' }),
+      location: existingBath?.location || "",
+      waterTemperature: existingBath?.waterTemperature || undefined,
+      comments: existingBath?.comments || "",
       image: null,
     },
     mode: "onChange",
@@ -126,16 +130,23 @@ export function BathLoggingForm() {
   
 
   useEffect(() => {
-    // Set initial date and time on client-side after hydration
-    // This ensures it uses the client's current date/time and avoids hydration mismatch
-    const now = new Date();
-    setInitialDate(now); // For Calendar component initial display if needed
-    form.setValue('date', now, { shouldValidate: true });
-    
-    const currentTimeFormatted = now.toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' });
-    form.setValue('time', currentTimeFormatted, { shouldValidate: true });
-
-  }, [form]); // Run only once on mount
+    if (isEditing && existingBath) {
+      const d = new Date(existingBath.date);
+      setInitialDate(d);
+      form.setValue('date', d, { shouldValidate: true });
+      form.setValue('time', existingBath.time, { shouldValidate: true });
+      form.setValue('location', existingBath.location || '', { shouldValidate: false });
+      form.setValue('waterTemperature', existingBath.waterTemperature || undefined);
+      form.setValue('comments', existingBath.comments || '', { shouldValidate: false });
+      setPreviewImage(existingBath.imageUrl || null);
+    } else {
+      const now = new Date();
+      setInitialDate(now);
+      form.setValue('date', now, { shouldValidate: true });
+      const currentTimeFormatted = now.toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' });
+      form.setValue('time', currentTimeFormatted, { shouldValidate: true });
+    }
+  }, [form, existingBath, isEditing]);
 
 
   useEffect(() => {
@@ -182,8 +193,7 @@ export function BathLoggingForm() {
         return;
     }
     setIsSubmitting(true);
-
-    let imageUrl: string | undefined = undefined;
+    let imageUrl: string | undefined = existingBath?.imageUrl;
     if (data.image) {
         try {
             const imageFileName = `baths/${currentUser.uid}/${Date.now()}-${data.image.name}`;
@@ -198,53 +208,49 @@ export function BathLoggingForm() {
         }
     }
 
-    const bathData: CreateLoggedBathDTO = {
-        userId: currentUser.uid,
-        userName: userProfile.name,
-        userAvatar: userProfile.avatarUrl || "",
-        date: format(data.date, "yyyy-MM-dd"),
-        time: data.time,
-        location: data.location || "",
-        waterTemperature: data.waterTemperature || null,
-        comments: data.comments || "",
-        ...(imageUrl ? { imageUrl } : {}),
-        reactions: { thumbsUp: 0, heart: 0, party: 0 },
-        commentCount: 0,
-        createdAt: Date.now(),
-        type: 'logged',
-    };
-
     try {
-        await addDoc(collection(db, "baths"), bathData);
-        
-        const userDocRef = doc(db, "users", currentUser.uid);
-        await updateDoc(userDocRef, {
-            currentBaths: increment(1)
-        });
-        await fetchUserProfile(currentUser.uid);
+        if (isEditing && existingBath) {
+            const updateData: Partial<LoggedBath> = {
+                date: format(data.date, "yyyy-MM-dd"),
+                time: data.time,
+                location: data.location || "",
+                waterTemperature: data.waterTemperature || null,
+                comments: data.comments || "",
+                ...(imageUrl ? { imageUrl } : {}),
+            };
+            await updateDoc(doc(db, "baths", existingBath.id), updateData);
+            toast({ title: "Bad Oppdatert!", description: "Endringene er lagret." });
+        } else {
+            const bathData: CreateLoggedBathDTO = {
+                userId: currentUser.uid,
+                userName: userProfile.name,
+                userAvatar: userProfile.avatarUrl || "",
+                date: format(data.date, "yyyy-MM-dd"),
+                time: data.time,
+                location: data.location || "",
+                waterTemperature: data.waterTemperature || null,
+                comments: data.comments || "",
+                ...(imageUrl ? { imageUrl } : {}),
+                reactions: { thumbsUp: 0, heart: 0, party: 0 },
+                commentCount: 0,
+                createdAt: Date.now(),
+                type: 'logged',
+            };
+            await addDoc(collection(db, "baths"), bathData);
+            const userDocRef = doc(db, "users", currentUser.uid);
+            await updateDoc(userDocRef, { currentBaths: increment(1) });
+            await fetchUserProfile(currentUser.uid);
+            toast({
+                title: "Bad Logget!",
+                description: `Ditt bad ${data.location ? `ved ${data.location}` : ''} er logget.`,
+                variant: "default",
+            });
+        }
 
-
-        toast({
-            title: "Bad Logget!",
-            description: `Ditt bad ${data.location ? `ved ${data.location}` : ''} er logget.`,
-            variant: "default",
-        });
-        
-        // Reset to new current date/time for next logging
-        const now = new Date();
-        form.reset({
-            date: now,
-            time: now.toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' }),
-            location: "",
-            waterTemperature: undefined,
-            comments: "",
-            image: undefined,
-        });
-        setPreviewImage(null);
-        router.push('/'); 
+        router.push('/');
     } catch (error) {
         console.error("Error logging bath: ", error);
-        toast({ variant: "destructive", title: "Loggføring feilet", description: "En feil oppstod." });
+        toast({ variant: "destructive", title: "Loggfeil", description: "En feil oppstod." });
     } finally {
         setIsSubmitting(false);
     }
