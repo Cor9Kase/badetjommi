@@ -36,7 +36,7 @@ export function Navbar() {
   if (loading) {
     // Optional: render a loading state or null for the navbar while auth is loading
     return (
-      <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border shadow-t-lg z-50">
+      <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border shadow-t-lg z-[60]">
         <div className="container mx-auto flex justify-around items-center h-16 max-w-md">
           {/* Placeholder for loading state, e.g., skeletons or a simple message */}
           <span className="text-xs text-muted-foreground">Laster...</span>
@@ -46,7 +46,7 @@ export function Navbar() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border shadow-t-lg z-50">
+    <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border shadow-t-lg z-[60]">
       <div className="container mx-auto flex justify-around items-center h-16 max-w-md">
         {visibleNavItems.map((item) => {
           const isActive = pathname === item.href || (item.href === "/profil" && pathname.startsWith("/profil/"));
